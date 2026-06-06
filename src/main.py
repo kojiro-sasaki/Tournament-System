@@ -6,10 +6,17 @@ class App(ctk.CTk):
         super().__init__()
         self.title("Tournament Management System")
         self.geometry("400x500")
-
+        self.resizable(False, False) 
+        self.center_window()
         ctk.set_appearance_mode("dark")  
         ctk.set_default_color_theme("blue")  
         self.show_login_screen()
+
+    def center_window(self):
+        self.update_idletasks()
+        x = (self.winfo_screenwidth() // 2) - (self.winfo_width() // 2)
+        y = (self.winfo_screenheight() // 2) - (self.winfo_height() // 2)
+        self.geometry(f"+{x}+{y}")
 
     def show_login_screen(self):
         for widget in self.winfo_children():
