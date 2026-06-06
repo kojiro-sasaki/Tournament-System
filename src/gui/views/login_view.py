@@ -20,17 +20,20 @@ class LoginWindow(ctk.CTkFrame):
         self.button_login = ctk.CTkButton(master=self, text="Log in", command=self.login_event, height=40)
         self.button_login.pack(pady=(20, 10), padx=40, fill="x")
 
-
-
+        self.error_label = ctk.CTkLabel(master=self, text="", text_color="#ff4c4c", font=("Roboto", 12))
+        self.error_label.pack(pady=5)
 
     def login_event(self):
         username = self.entry_username.get()
         password = self.entry_password.get()
         
+        self.error_label.configure(text="")
         
+        if username == "" or password == "":
+            self.error_label.configure(text="Please enter username and password!")
+            return
+            
+        # TODO: Dodać weryfikację użytkownika w bazie danych (Backend)
         print(f"Attempt login: {username}")
         
-        if username != "" and password != "":
-            self.on_login_success(username)
-        else:
-            print("Please enter username and password!")
+        self.on_login_success(username)
