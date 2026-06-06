@@ -88,7 +88,7 @@ Drużyna może podać:
 ## Technologie
 
 * Python
-* GUI Framework (do ustalenia)
+* CustomTkinter (GUI Framework)
 * SQLite
 * pytest
 * GitHub Actions
