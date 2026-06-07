@@ -1,10 +1,11 @@
 import customtkinter as ctk
 
 class LoginWindow(ctk.CTkFrame):
-    def __init__(self, master, on_login_success):
+    def __init__(self, master, on_login_success, on_go_to_register):
         super().__init__(master)
         
         self.on_login_success = on_login_success
+        self.on_go_to_register = on_go_to_register
         
         self.pack(pady=20, padx=20, fill="both", expand=True)
 
@@ -19,6 +20,9 @@ class LoginWindow(ctk.CTkFrame):
 
         self.button_login = ctk.CTkButton(master=self, text="Log in", command=self.login_event, height=40)
         self.button_login.pack(pady=(20, 10), padx=40, fill="x")
+
+        self.button_register = ctk.CTkButton(master=self, text="Don't have an account? Register", command=self.on_go_to_register, fg_color="transparent", border_width=2, text_color=("gray10", "#DCE4EE"), height=40)
+        self.button_register.pack(pady=(0, 10), padx=40, fill="x")
 
         self.error_label = ctk.CTkLabel(master=self, text="", text_color="#ff4c4c", font=("Roboto", 12))
         self.error_label.pack(pady=5)
