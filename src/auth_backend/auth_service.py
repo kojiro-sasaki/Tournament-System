@@ -1,6 +1,5 @@
 import re
 from .password_utils import hash_password
-from database.connection import supabase
 
 
 class RegistrationError(Exception):
@@ -23,6 +22,7 @@ def validate_password(password):
 
 
 def register_user(email, username, password):
+    from database.connection import supabase
     if not email or not username or not password:
         raise RegistrationError("All fields are required")
     
