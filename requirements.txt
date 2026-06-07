@@ -5,3 +5,6 @@ supabase==2.15.3
 
 # Load environment variables from .env file
 python-dotenv==1.1.1
+
+# Password hashing
+bcrypt==4.1.1

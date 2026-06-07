@@ -1,13 +1,36 @@
+# Python bytecode
 __pycache__/
 *.py[cod]
 *$py.class
+
+# Virtual environments
 .venv/
 venv/
 ENV/
 env/
+
+# Testing caches
 .pytest_cache/
-# PyCharm settings
+.cache/
+
+# IDE settings
 .idea/
+.vscode/
+*.iml
 
 # Environment variables and API keys
 .env
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+pip-wheel-metadata/
+
+# Coverage reports
+.coverage
+htmlcov/
+
+# Misc
+*.log
+.DS_Store
