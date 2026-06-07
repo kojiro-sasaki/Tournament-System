@@ -1,4 +1,4 @@
-from src.auth_backend.password_utils import verify_password
+from auth_backend.password_utils import verify_password
 
 class LoginService:
     def __init__(self, account_repository):

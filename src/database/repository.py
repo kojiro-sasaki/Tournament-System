@@ -1,4 +1,4 @@
-from src.database.connection import supabase
+from database.connection import supabase
 
 class AccountRepository:
     def get_by_login(self, login: str):

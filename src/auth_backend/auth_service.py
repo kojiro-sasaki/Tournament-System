@@ -1,6 +1,6 @@
 import re
 from .password_utils import hash_password
-from src.database.connection import supabase
+from database.connection import supabase
 
 
 class RegistrationError(Exception):

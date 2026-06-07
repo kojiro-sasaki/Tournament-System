@@ -1,17 +1,13 @@
 from services.login_service import LoginService
-
+from auth_backend.password_utils import hash_password
 class FakeRepository:
 
     def get_by_login(
         self,
         login
     ):
-
-        class Account:
-            password = "123"
-
         if login == "team1":
-            return Account()
+            return {'password_hash': hash_password('123')}
 
         return None
 
