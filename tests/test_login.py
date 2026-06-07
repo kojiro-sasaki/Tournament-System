@@ -1,5 +1,4 @@
-from src.services.login_service import LoginService
-
+from services.login_service import LoginService
 
 class FakeRepository:
 
