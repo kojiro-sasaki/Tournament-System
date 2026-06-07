@@ -5,6 +5,7 @@ venv/
 ENV/
 env/
 .pytest_cache/
+
 # PyCharm settings
 .idea/
 
