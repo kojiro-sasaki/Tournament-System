@@ -1,18 +1,27 @@
+# Python bytecode
+__pycache__/
 *.py[cod]
 *$py.class
+
+# Virtual environments
 .venv/
 venv/
 ENV/
 env/
+
+# Testing caches
 .pytest_cache/
 
 # PyCharm settings
+.cache/
+
+# IDE settings
 .idea/
+.vscode/
+*.iml
 
 # Environment variables and API keys
 .env
 
-#Tests
-__pycache__/
-.pytest_cache/
-*.pyc
+# Tests
+.pycache/
