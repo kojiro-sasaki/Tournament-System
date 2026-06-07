@@ -14,8 +14,8 @@ System będzie umożliwiał organizację turniejów dla różnych dyscyplin espo
 
 Planowane dyscypliny:
 
-- Counter-Strike 2
-- ![Dota 2](https://img.shields.io/badge/Dota2-red?logo=dota2)
+- Counter-Strike 2![Counter-Strike 2](https://img.shields.io/badge/Counter-Strike_2-yellow?logo=Counter-Strike)
+- Dota 2![Dota 2](https://img.shields.io/badge/Dota2-red?logo=dota2)
 
 Każdy turniej będzie przypisany do jednej wybranej dyscypliny.
 
@@ -87,12 +87,12 @@ Drużyna może podać:
 
 ## Technologie
 
-* Python
+* Python ![Python](https://img.shields.io/badge/Python-darkgreen?logo=python)
 * GUI Framework (do ustalenia)
-* SQLite
-* pytest
-* GitHub Actions
-* Git + GitHub
+* SQLite ![SqlLite](https://img.shields.io/badge/SQLite-darkblue?logo=sqlite)
+* pytest ![pytest](https://img.shields.io/badge/pytest-lightblue?logo=pytest)
+* GitHub Actions ![GitHub Actions](https://img.shields.io/badge/githubactions-gray?logo=githubactions)
+* Git + GitHub ![Git](https://img.shields.io/badge/git-black?logo=git) + ![GitHub](https://img.shields.io/badge/github-black?logo=github)
 
 ## Organizacja pracy
 
