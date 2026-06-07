@@ -1,0 +1,1 @@
+insert into games(name) values ('Counter-Strike 2'), ('Dota 2')
