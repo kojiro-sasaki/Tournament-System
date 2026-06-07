@@ -1,10 +1,11 @@
 import customtkinter as ctk
 
 class LoginWindow(ctk.CTkFrame):
-    def __init__(self, master, on_login_success):
+    def __init__(self, master, on_login_success, on_go_to_register):
         super().__init__(master)
         
         self.on_login_success = on_login_success
+        self.on_go_to_register = on_go_to_register
         
         self.pack(pady=20, padx=20, fill="both", expand=True)
 
