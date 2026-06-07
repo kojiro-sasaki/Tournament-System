@@ -43,6 +43,16 @@ class RegisterWindow(ctk.CTkFrame):
         password = self.entry_password.get()
         confirm_password = self.entry_confirm_password.get()
         
+        self.error_label.configure(text="")
+        
+        if not all([email, username, team_name, password, confirm_password]):
+            self.error_label.configure(text="Please fill all fields!")
+            return
+            
+        if password != confirm_password:
+            self.error_label.configure(text="Passwords do not match!")
+            return
+            
         self.error_label.configure(text="")  
         # TODO: Dodać zapis do bazy danych (Backend)
         print(f"Attempt register: User={username}, Team={team_name}")
