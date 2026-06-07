@@ -11,6 +11,8 @@ env/
 
 # Testing caches
 .pytest_cache/
+
+# PyCharm settings
 .cache/
 
 # IDE settings
@@ -21,16 +23,5 @@ env/
 # Environment variables and API keys
 .env
 
-# Distribution / packaging
-build/
-dist/
-*.egg-info/
-pip-wheel-metadata/
-
-# Coverage reports
-.coverage
-htmlcov/
-
-# Misc
-*.log
-.DS_Store
+# Tests
+.pycache/

@@ -1,5 +1,4 @@
-from src.services.login_service import LoginService
-
+from services.login_service import LoginService
 
 class FakeRepository:
 
@@ -9,7 +8,6 @@ class FakeRepository:
     ):
 
         class Account:
-
             password = "123"
 
         if login == "team1":
@@ -17,6 +15,11 @@ class FakeRepository:
 
         return None
 
+def test_login_init():
+    repo = FakeRepository()
+    service = LoginService(repo)
+
+    assert repo is service.account_repository
 
 def test_login_success():
 
@@ -30,7 +33,7 @@ def test_login_success():
     )
 
 
-def test_login_fail():
+def test_login_fail_wrong_password():
 
     service = LoginService(
         FakeRepository()
@@ -39,4 +42,20 @@ def test_login_fail():
     assert not service.login(
         "team1",
         "wrong"
+    )
+
+def test_login_fail_unknown_user():
+    service = LoginService(FakeRepository())
+
+    assert not service.login(
+        "unknown",
+        "123"
+    )
+
+def test_login_unknown_user_wrong_password():
+    service = LoginService(FakeRepository())
+
+    assert not service.login(
+        "unknown",
+        "123"
     )

@@ -1,4 +1,4 @@
-from connection import supabase
+from src.database.connection import supabase
 
 try:
     response = (
