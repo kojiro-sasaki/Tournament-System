@@ -15,7 +15,7 @@ System będzie umożliwiał organizację turniejów dla różnych dyscyplin espo
 Planowane dyscypliny:
 
 - Counter-Strike 2
-- Dota 2
+- ![Dota 2](https://img.shields.io/badge/Dota2-red?logo=dota2)
 
 Każdy turniej będzie przypisany do jednej wybranej dyscypliny.
 
