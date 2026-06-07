@@ -17,9 +17,6 @@ class RegisterWindow(ctk.CTkFrame):
 
         self.entry_username = ctk.CTkEntry(master=self, placeholder_text="Username", height=40)
         self.entry_username.pack(pady=5, padx=40, fill="x")
-
-        self.entry_team_name = ctk.CTkEntry(master=self, placeholder_text="Team Name", height=40)
-        self.entry_team_name.pack(pady=5, padx=40, fill="x")
         
         self.entry_password = ctk.CTkEntry(master=self, placeholder_text="Password", show="*", height=40)
         self.entry_password.pack(pady=5, padx=40, fill="x")
