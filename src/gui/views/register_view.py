@@ -29,6 +29,9 @@ class RegisterWindow(ctk.CTkFrame):
 
         self.button_register = ctk.CTkButton(master=self, text="Register", command=self.register_event, height=40)
         self.button_register.pack(pady=(15, 10), padx=40, fill="x")
+        
+        self.button_back = ctk.CTkButton(master=self, text="Back to Login", command=self.on_back_to_login, fg_color="transparent", border_width=2, text_color=("gray10", "#DCE4EE"), height=40)
+        self.button_back.pack(pady=(0, 10), padx=40, fill="x")
 
         self.error_label = ctk.CTkLabel(master=self, text="", text_color="#ff4c4c", font=("Roboto", 12))
         self.error_label.pack(pady=5)
