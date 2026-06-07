@@ -5,5 +5,9 @@ __pycache__/
 venv/
 ENV/
 env/
-.env
 .pytest_cache/
+# PyCharm settings
+.idea/
+
+# Environment variables and API keys
+.env
