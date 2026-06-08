@@ -5,7 +5,7 @@ from src.database.repository import AccountRepository
 
 class LoginWindow(ctk.CTkFrame):
     def __init__(self, master, on_login_success=None, on_go_to_register=None):
-        super().__init__(master)  # своих kwargs НЕ передаём в super()
+        super().__init__(master) 
 
         self.on_login_success = on_login_success
         self.on_go_to_register = on_go_to_register
