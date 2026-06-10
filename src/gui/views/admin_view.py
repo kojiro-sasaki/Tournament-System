@@ -853,3 +853,60 @@ class AdminWindow(ctk.CTkFrame):
             return
             
         current = m_idx
+        while True:
+            next_idx = get_next_match_index(current, len(t_matches))
+            if next_idx >= len(t_matches):
+                break
+            team_key = "team1" if current % 2 == 0 else "team2"
+            score_key = "score1" if current % 2 == 0 else "score2"
+            # TODO: UPDATE matches SET {team_key} = 'TBD', {score_key} = 0, status = 'Scheduled' WHERE id = t_matches[next_idx]['id']
+            t_matches[next_idx][team_key] = "TBD"
+            t_matches[next_idx][score_key] = 0
+            t_matches[next_idx]["status"] = "Scheduled"
+            current = next_idx
+
+        self.refresh_bracket_view()
+
+    def _make_canvas_match_card(self, match, w, h):
+        """Build a match card widget to be placed on the canvas via create_window."""
+        finished = match["status"] == "Finished"
+        border_color = "#2E7D32" if finished else "#5A2E8A"
+
+        card = ctk.CTkFrame(
+            self.bracket_canvas,
+            fg_color="#13131A",
+            corner_radius=6,
+            border_width=2,
+            border_color=border_color,
+            width=w,
+            height=h
+        )
+        card.pack_propagate(False)
+        card.grid_propagate(False)
+
+        # Round label at top
+        round_lbl = ctk.CTkLabel(
+            card,
+            text=match["round"],
+            font=("Roboto", 9),
+            text_color=TEXT_MUTED
+        )
+        round_lbl.pack(anchor="w", padx=8, pady=(4, 0))
+
+        teams_frame = ctk.CTkFrame(card, fg_color="transparent")
+        teams_frame.pack(fill="both", expand=True, padx=6, pady=(0, 4))
+
+        # Team 1 row
+        t1_frame = ctk.CTkFrame(teams_frame, fg_color="transparent")
+        t1_frame.pack(fill="x", pady=1)
+
+        if finished:
+            t1_winner = match["score1"] > match["score2"]
+            t1_color = "#FFFFFF" if t1_winner else TEXT_MUTED
+            t1_lbl = ctk.CTkLabel(
+                t1_frame,
+                text=("✓ " if t1_winner else "   ") + match["team1"],
+                font=("Roboto", 11, "bold" if t1_winner else "normal"),
+                text_color=t1_color,
+                anchor="w"
+            )
