@@ -306,3 +306,65 @@ class AdminWindow(ctk.CTkFrame):
             delete_btn = ctk.CTkButton(actions, text="Delete", font=("Roboto", 11), height=25, width=60, fg_color="transparent", border_width=1, border_color="#C62828", text_color="#FF4C4C", hover_color="#3A1C1C", corner_radius=6, command=lambda tid=t["id"]: self.delete_tournament(tid))
             delete_btn.pack(side="right")
 
+    def create_tournament_event(self):
+        name = self.t_name_entry.get().strip()
+        game = self.t_game_menu.get()
+        max_teams = int(self.t_teams_menu.get())
+        date_str = self.t_date_entry.get().strip()
+
+        self.t_error_lbl.configure(text="")
+
+        if not name:
+            self.t_error_lbl.configure(text="Please enter a tournament name!")
+            return
+
+        try:
+            datetime.datetime.strptime(date_str, "%Y-%m-%d")
+        except ValueError:
+            self.t_error_lbl.configure(text="Invalid date format! Use YYYY-MM-DD")
+            return
+
+        selected_teams = [t_name for t_name, var in self.team_checkboxes.items() if var.get() == "on"]
+        if len(selected_teams) != max_teams:
+            self.t_error_lbl.configure(text=f"Please select exactly {max_teams} teams!")
+            return
+
+        new_id = max([t["id"] for t in self.tournaments]) + 1 if self.tournaments else 1
+        new_t = {
+            "id": new_id,
+            "name": name,
+            "game": game,
+            "max_teams": max_teams,
+            "status": "Draft",
+            "registered_teams": len(selected_teams),
+            "date": date_str,
+            "teams": selected_teams
+        }
+
+        # TODO: INSERT INTO tournaments (id, name, game, max_teams, status, registered_teams, date) VALUES (...)
+        self.tournaments.append(new_t)
+        # TODO: INSERT INTO activities (message) VALUES (...)
+        self.activities.append(f"Tournament '{name}' created successfully as 'Draft'")
+        
+        if max_teams in (8, 16):
+            match_id_start = max([m["id"] for m in self.matches]) + 1 if self.matches else 1
+            new_matches = generate_matches(new_id, selected_teams, max_teams, match_id_start)
+            # TODO: INSERT INTO matches (id, tournament_id, round, team1, team2) VALUES (...)
+            self.matches.extend(new_matches)
+
+        self.t_name_entry.delete(0, "end")
+        for var in self.team_checkboxes.values():
+            var.set("off")
+        
+        self.refresh_tournaments_list()
+
+    def change_tournament_status(self, tournament_id, new_status):
+        for t in self.tournaments:
+            if t["id"] == tournament_id:
+                # TODO: UPDATE tournaments SET status = new_status WHERE id = tournament_id
+                t["status"] = new_status
+                # TODO: INSERT INTO activities (message) VALUES (...)
+                self.activities.append(f"Tournament '{t['name']}' status changed to '{new_status}'")
+                break
+        self.refresh_tournaments_list()
+
