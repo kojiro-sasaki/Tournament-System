@@ -1,3 +1,5 @@
+from dateutil.tz.win import valuestodict
+
 from database.connection import supabase
 
 class TournamentRegistrationRepository:
@@ -65,13 +67,31 @@ class TournamentRegistrationRepository:
     @staticmethod
     def update_by_id(
             registration_id: int,
-            status: str):
+            data: dict
+    ):
+
+        allowed_fields = {
+            'status'
+        }
+
+        filtered_data = {
+            key: value
+            for key, value in data.items()
+            if key in allowed_fields
+        }
+
+
+        if not filtered_data:
+            raise ValueError(
+                "No valid fields frovided for update"
+            )
 
         return(
             supabase
             .table('tournament_registrations')
-            .update({'status': status})
+            .update(filtered_data)
             .eq('id', registration_id)
+            .execute()
         )
 
 
@@ -82,6 +102,5 @@ class TournamentRegistrationRepository:
             .table('tournament_registrations')
             .delete()
             .eq('id', reg_id)
-            .single()
             .execute()
         )
