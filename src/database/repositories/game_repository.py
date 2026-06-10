@@ -83,7 +83,7 @@ class GameRepository:
             .execute()
         )
 
-    
+
     @staticmethod
     def delete_by_id(game_id: int):
 

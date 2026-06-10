@@ -1,6 +1,6 @@
 import customtkinter as ctk
 from src.services.login_service import LoginService
-from src.database.repository import AccountRepository
+from database.repositories.repository import AccountRepository
 
 
 class LoginWindow(ctk.CTkFrame):
