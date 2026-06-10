@@ -607,3 +607,57 @@ class AdminWindow(ctk.CTkFrame):
                 # TODO: UPDATE matches SET team2 = winner WHERE id = t_matches[next_idx]['id']
                 t_matches[next_idx]["team2"] = winner
 
+    def show_bracket_tab(self):
+        tab_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        tab_frame.pack(fill="both", expand=True)
+
+        header = ctk.CTkLabel(tab_frame, text="Interactive Playoff Bracket (Single Elimination)", font=("Roboto", 16, "bold"), text_color=TEXT_PRIMARY)
+        header.pack(anchor="w", pady=(0, 15))
+
+        t_options = {t["name"]: t["id"] for t in self.tournaments}
+        t_names = list(t_options.keys())
+        current_name = next((k for k, v in t_options.items() if v == self.selected_tournament_id), t_names[0] if t_names else "")
+
+        sel_row = ctk.CTkFrame(tab_frame, fg_color="transparent")
+        sel_row.pack(fill="x", pady=(0, 10))
+
+        t_selector = ctk.CTkOptionMenu(
+            sel_row,
+            values=t_names,
+            width=220,
+            height=30,
+            fg_color="#2A2A38",
+            button_color="#3A3A4D",
+            command=lambda val: self.select_bracket_tournament(t_options[val])
+        )
+        t_selector.set(current_name)
+        t_selector.pack(side="left")
+
+        # Outer container with card styling
+        canvas_container = ctk.CTkFrame(tab_frame, fg_color=BG_CARD, corner_radius=10, border_width=1, border_color="#2E2E3A")
+        canvas_container.pack(fill="both", expand=True)
+
+        # Scrollbars
+        h_scroll = tk.Scrollbar(canvas_container, orient="horizontal")
+        h_scroll.pack(side="bottom", fill="x")
+        v_scroll = tk.Scrollbar(canvas_container, orient="vertical")
+        v_scroll.pack(side="right", fill="y")
+
+        # Main canvas for drawing lines + embedding widgets
+        self.bracket_canvas = tk.Canvas(
+            canvas_container,
+            bg=BG_CARD,
+            highlightthickness=0,
+            xscrollcommand=h_scroll.set,
+            yscrollcommand=v_scroll.set
+        )
+        self.bracket_canvas.pack(side="left", fill="both", expand=True)
+
+        h_scroll.config(command=self.bracket_canvas.xview)
+        v_scroll.config(command=self.bracket_canvas.yview)
+
+        self.bracket_canvas.bind("<MouseWheel>", lambda e: self.bracket_canvas.yview_scroll(int(-1*(e.delta/120)), "units"))
+        self.bracket_canvas.bind("<Shift-MouseWheel>", lambda e: self.bracket_canvas.xview_scroll(int(-1*(e.delta/120)), "units"))
+
+        self.refresh_bracket_view()
+
