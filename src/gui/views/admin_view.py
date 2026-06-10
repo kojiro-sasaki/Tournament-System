@@ -51,3 +51,88 @@ class AdminWindow(ctk.CTkFrame):
         self.current_tab = None
         self.select_tab("Dashboard")
 
+    def create_sidebar(self):
+        self.sidebar_frame = ctk.CTkFrame(self, fg_color=BG_SIDEBAR, width=220, corner_radius=0)
+        self.sidebar_frame.grid(row=0, column=0, sticky="nsew")
+        self.sidebar_frame.grid_rowconfigure(6, weight=1)
+
+        brand_label = ctk.CTkLabel(
+            self.sidebar_frame, 
+            text="Tournament System", 
+            font=("Roboto", 18, "bold"), 
+            text_color=TEXT_PRIMARY
+        )
+        brand_label.grid(row=0, column=0, padx=20, pady=(25, 5), sticky="w")
+
+        role_label = ctk.CTkLabel(
+            self.sidebar_frame, 
+            text="ADMIN CONTROL PANEL", 
+            font=("Roboto", 11, "bold"), 
+            text_color=COLOR_PRIMARY
+        )
+        role_label.grid(row=1, column=0, padx=20, pady=(0, 25), sticky="w")
+
+        tabs = [
+            ("Dashboard", "🏠  Dashboard"),
+            ("Tournaments", "🏆  Tournaments"),
+            ("Matches", "⚔️  Matches"),
+            ("Bracket", "📊  Bracket"),
+            ("Teams", "👥  Teams")
+        ]
+
+        for idx, (tab_name, display_text) in enumerate(tabs):
+            btn = ctk.CTkButton(
+                self.sidebar_frame,
+                text=display_text,
+                anchor="w",
+                font=("Roboto", 13),
+                height=40,
+                fg_color="transparent",
+                text_color=TEXT_PRIMARY,
+                hover_color="#272738",
+                corner_radius=8,
+                command=lambda name=tab_name: self.select_tab(name)
+            )
+            btn.grid(row=idx + 2, column=0, padx=10, pady=4, sticky="ew")
+            self.sidebar_buttons[tab_name] = btn
+
+        logout_btn = ctk.CTkButton(
+            self.sidebar_frame,
+            text="🚪  Log Out",
+            anchor="w",
+            font=("Roboto", 13),
+            height=40,
+            fg_color="transparent",
+            text_color="#FF6B6B",
+            hover_color="#3A1C1C",
+            corner_radius=8,
+            command=self.on_logout
+        )
+        logout_btn.grid(row=7, column=0, padx=10, pady=25, sticky="ew")
+
+    def select_tab(self, tab_name):
+        if self.current_tab == tab_name:
+            return
+
+        for name, btn in self.sidebar_buttons.items():
+            if name == tab_name:
+                btn.configure(fg_color=COLOR_PRIMARY, hover_color=COLOR_PRIMARY)
+            else:
+                btn.configure(fg_color="transparent", hover_color="#272738")
+
+        self.current_tab = tab_name
+
+        for widget in self.content_frame.winfo_children():
+            widget.destroy()
+
+        if tab_name == "Dashboard":
+            self.show_dashboard_tab()
+        elif tab_name == "Tournaments":
+            self.show_tournaments_tab()
+        elif tab_name == "Matches":
+            self.show_matches_tab()
+        elif tab_name == "Bracket":
+            self.show_bracket_tab()
+        elif tab_name == "Teams":
+            self.show_teams_tab()
+
