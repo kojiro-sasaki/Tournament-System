@@ -821,3 +821,49 @@ class AdminWindow(ctk.CTkFrame):
             total_h = max(qf_ys[3] + CARD_H, cy + CARD_H) + PAD_Y
         self.bracket_canvas.configure(scrollregion=(0, 0, total_w, total_h))
 
+    def set_winner(self, match, winner_index, cb1=None, cb2=None):
+        if winner_index == 1:
+            match["score1"] = 1
+            match["score2"] = 0
+        else:
+            match["score1"] = 0
+            match["score2"] = 1
+            
+        # TODO: UPDATE matches SET score1 = match['score1'], score2 = match['score2'], status = 'Finished' WHERE id = match['id']
+        match["status"] = "Finished"
+        self.update_bracket_flow(match)
+        self.refresh_bracket_view()
+
+    def reset_match(self, match):
+        """Reset a finished match back to Scheduled so the winner can be changed."""
+        # TODO: UPDATE matches SET score1 = 0, score2 = 0, status = 'Scheduled' WHERE id = match['id']
+        match["score1"] = 0
+        match["score2"] = 0
+        match["status"] = "Scheduled"
+        
+        t_matches = [m for m in self.matches if m["tournament_id"] == match["tournament_id"]]
+        if len(t_matches) not in (7, 15):
+            self.refresh_bracket_view()
+            return
+            
+        try:
+            m_idx = t_matches.index(match)
+        except ValueError:
+            self.refresh_bracket_view()
+            return
+            
+        current = m_idx
+        while True:
+            next_idx = get_next_match_index(current, len(t_matches))
+            if next_idx >= len(t_matches):
+                break
+            team_key = "team1" if current % 2 == 0 else "team2"
+            score_key = "score1" if current % 2 == 0 else "score2"
+            # TODO: UPDATE matches SET {team_key} = 'TBD', {score_key} = 0, status = 'Scheduled' WHERE id = t_matches[next_idx]['id']
+            t_matches[next_idx][team_key] = "TBD"
+            t_matches[next_idx][score_key] = 0
+            t_matches[next_idx]["status"] = "Scheduled"
+            current = next_idx
+
+        self.refresh_bracket_view()
+
