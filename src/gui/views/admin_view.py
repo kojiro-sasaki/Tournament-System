@@ -169,3 +169,60 @@ class AdminWindow(ctk.CTkFrame):
             bullet = ctk.CTkLabel(row, text="●", text_color=COLOR_PRIMARY, font=("Roboto", 12))
             bullet.pack(side="left", padx=(15, 10))
 
+            text_lbl = ctk.CTkLabel(row, text=activity, text_color=TEXT_PRIMARY, font=("Roboto", 13))
+            text_lbl.pack(side="left", fill="both")
+
+            time_lbl = ctk.CTkLabel(row, text="Just now", text_color=TEXT_MUTED, font=("Roboto", 11))
+            time_lbl.pack(side="right", padx=15)
+
+    def create_stat_card(self, parent, column, title, value, icon):
+        card = ctk.CTkFrame(parent, fg_color=BG_CARD, corner_radius=10, height=100, border_width=1, border_color="#2E2E3A")
+        card.grid(row=0, column=column, padx=8, sticky="ew")
+        card.pack_propagate(False)
+
+        icon_lbl = ctk.CTkLabel(card, text=icon, font=("Roboto", 32), text_color=COLOR_PRIMARY)
+        icon_lbl.pack(side="left", padx=20)
+
+        info_frame = ctk.CTkFrame(card, fg_color="transparent")
+        info_frame.pack(side="left", fill="both", expand=True, pady=15)
+
+        val_lbl = ctk.CTkLabel(info_frame, text=value, font=("Roboto", 24, "bold"), text_color=TEXT_PRIMARY, anchor="w")
+        val_lbl.pack(fill="x")
+
+        title_lbl = ctk.CTkLabel(info_frame, text=title, font=("Roboto", 12), text_color=TEXT_MUTED, anchor="w")
+        title_lbl.pack(fill="x")
+
+    def show_tournaments_tab(self):
+        tab_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        tab_frame.pack(fill="both", expand=True)
+
+        tab_frame.grid_columnconfigure(0, weight=4)
+        tab_frame.grid_columnconfigure(1, weight=6)
+        tab_frame.grid_rowconfigure(0, weight=1)
+
+        form_panel = ctk.CTkFrame(tab_frame, fg_color=BG_CARD, corner_radius=10, border_width=1, border_color="#2E2E3A")
+        form_panel.grid(row=0, column=0, padx=(0, 10), sticky="nsew")
+
+        form_label = ctk.CTkLabel(form_panel, text="Create Tournament", font=("Roboto", 16, "bold"), text_color=TEXT_PRIMARY)
+        form_label.pack(anchor="w", padx=20, pady=(20, 15))
+
+        ctk.CTkLabel(form_panel, text="Tournament Name", font=("Roboto", 12), text_color=TEXT_MUTED).pack(anchor="w", padx=20, pady=(5, 2))
+        self.t_name_entry = ctk.CTkEntry(form_panel, placeholder_text="e.g. CS2 Spring Open", height=35)
+        self.t_name_entry.pack(fill="x", padx=20, pady=(0, 10))
+
+        ctk.CTkLabel(form_panel, text="Game Discipline", font=("Roboto", 12), text_color=TEXT_MUTED).pack(anchor="w", padx=20, pady=(5, 2))
+        self.t_game_menu = ctk.CTkOptionMenu(form_panel, values=["Counter-Strike 2", "Dota 2"], height=35, fg_color="#2A2A38", button_color="#3A3A4D")
+        self.t_game_menu.pack(fill="x", padx=20, pady=(0, 10))
+
+        ctk.CTkLabel(form_panel, text="Max Teams", font=("Roboto", 12), text_color=TEXT_MUTED).pack(anchor="w", padx=20, pady=(5, 2))
+        self.t_teams_menu = ctk.CTkOptionMenu(form_panel, values=["8", "16"], height=35, fg_color="#2A2A38", button_color="#3A3A4D")
+        self.t_teams_menu.pack(fill="x", padx=20, pady=(0, 10))
+
+        ctk.CTkLabel(form_panel, text="Start Date", font=("Roboto", 12), text_color=TEXT_MUTED).pack(anchor="w", padx=20, pady=(5, 2))
+        self.t_date_entry = ctk.CTkEntry(form_panel, placeholder_text="YYYY-MM-DD", height=35)
+        default_date = (datetime.date.today() + datetime.timedelta(days=7)).strftime("%Y-%m-%d")
+        self.t_date_entry.insert(0, default_date)
+        self.t_date_entry.pack(fill="x", padx=20, pady=(0, 10))
+
+        ctk.CTkLabel(form_panel, text="Select Teams", font=("Roboto", 12), text_color=TEXT_MUTED).pack(anchor="w", padx=20, pady=(5, 2))
+        self.t_teams_scroll = ctk.CTkScrollableFrame(form_panel, fg_color="#181820", height=120, border_width=1, border_color="#2E2E3A")
