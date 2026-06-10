@@ -625,3 +625,60 @@ class AdminWindow(ctk.CTkFrame):
             sel_row,
             values=t_names,
             width=220,
+            height=30,
+            fg_color="#2A2A38",
+            button_color="#3A3A4D",
+            command=lambda val: self.select_bracket_tournament(t_options[val])
+        )
+        t_selector.set(current_name)
+        t_selector.pack(side="left")
+
+        # Outer container with card styling
+        canvas_container = ctk.CTkFrame(tab_frame, fg_color=BG_CARD, corner_radius=10, border_width=1, border_color="#2E2E3A")
+        canvas_container.pack(fill="both", expand=True)
+
+        # Scrollbars
+        h_scroll = tk.Scrollbar(canvas_container, orient="horizontal")
+        h_scroll.pack(side="bottom", fill="x")
+        v_scroll = tk.Scrollbar(canvas_container, orient="vertical")
+        v_scroll.pack(side="right", fill="y")
+
+        # Main canvas for drawing lines + embedding widgets
+        self.bracket_canvas = tk.Canvas(
+            canvas_container,
+            bg=BG_CARD,
+            highlightthickness=0,
+            xscrollcommand=h_scroll.set,
+            yscrollcommand=v_scroll.set
+        )
+        self.bracket_canvas.pack(side="left", fill="both", expand=True)
+
+        h_scroll.config(command=self.bracket_canvas.xview)
+        v_scroll.config(command=self.bracket_canvas.yview)
+
+        self.bracket_canvas.bind("<MouseWheel>", lambda e: self.bracket_canvas.yview_scroll(int(-1*(e.delta/120)), "units"))
+        self.bracket_canvas.bind("<Shift-MouseWheel>", lambda e: self.bracket_canvas.xview_scroll(int(-1*(e.delta/120)), "units"))
+
+        self.refresh_bracket_view()
+
+    def select_bracket_tournament(self, tournament_id):
+        self.selected_tournament_id = tournament_id
+        self.refresh_bracket_view()
+
+    def _draw_bracket_lines(self, canvas, positions, card_w, card_h, num_teams):
+        LINE_COLOR = "#3A5A7A"
+        LINE_WIDTH = 2
+
+        def mid_right(x, y):
+            return x + card_w, y + card_h // 2
+
+        def mid_left(x, y):
+            return x, y + card_h // 2
+
+        def draw_connector(x1, y1, x2, y2):
+            mid_x = (x1 + x2) // 2
+            canvas.create_line(x1, y1, mid_x, y1, fill=LINE_COLOR, width=LINE_WIDTH)
+            canvas.create_line(mid_x, y1, mid_x, y2, fill=LINE_COLOR, width=LINE_WIDTH)
+            canvas.create_line(mid_x, y2, x2, y2, fill=LINE_COLOR, width=LINE_WIDTH)
+
+        if num_teams == 16:
