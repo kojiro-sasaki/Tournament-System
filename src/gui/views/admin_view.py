@@ -252,3 +252,57 @@ class AdminWindow(ctk.CTkFrame):
 
         self.refresh_tournaments_list()
 
+    def refresh_tournaments_list(self):
+        for widget in self.tournaments_scroll.winfo_children():
+            widget.destroy()
+
+        for t in self.tournaments:
+            card = ctk.CTkFrame(self.tournaments_scroll, fg_color="#181820", corner_radius=8, border_width=1, border_color="#2A2A35")
+            card.pack(fill="x", pady=6, padx=5)
+
+            details = ctk.CTkFrame(card, fg_color="transparent")
+            details.pack(fill="x", padx=15, pady=10)
+
+            name_lbl = ctk.CTkLabel(details, text=t["name"], font=("Roboto", 14, "bold"), text_color=TEXT_PRIMARY, anchor="w")
+            name_lbl.pack(fill="x")
+
+            sub_lbl = ctk.CTkLabel(
+                details, 
+                text=f"{t['game']} • Max Teams: {t['max_teams']} • Date: {t['date']}", 
+                font=("Roboto", 11), 
+                text_color=TEXT_MUTED,
+                anchor="w"
+            )
+            sub_lbl.pack(fill="x")
+
+            status_frame = ctk.CTkFrame(card, fg_color="transparent")
+            status_frame.pack(fill="x", padx=15, pady=(0, 10))
+
+            color = COLOR_WARNING if t["status"] == "Draft" else (COLOR_PRIMARY if t["status"] == "Registration Open" else (COLOR_SUCCESS if t["status"] == "In Progress" else COLOR_DANGER))
+            badge = ctk.CTkLabel(
+                status_frame, 
+                text=f"  {t['status'].upper()}  ", 
+                font=("Roboto", 10, "bold"), 
+                text_color=TEXT_PRIMARY,
+                fg_color=color,
+                corner_radius=6,
+                height=22
+            )
+            badge.pack(side="left")
+
+            actions = ctk.CTkFrame(card, fg_color="transparent")
+            actions.pack(fill="x", padx=15, pady=(0, 10))
+
+            if t["status"] == "Draft":
+                open_reg_btn = ctk.CTkButton(actions, text="Open Registration", font=("Roboto", 11), height=25, width=110, fg_color="#34495E", hover_color="#2C3E50", corner_radius=6, command=lambda tid=t["id"]: self.change_tournament_status(tid, "Registration Open"))
+                open_reg_btn.pack(side="left", padx=(0, 5))
+            elif t["status"] == "Registration Open":
+                start_btn = ctk.CTkButton(actions, text="Start Tournament", font=("Roboto", 11), height=25, width=110, fg_color=COLOR_SUCCESS, hover_color="#236127", corner_radius=6, command=lambda tid=t["id"]: self.change_tournament_status(tid, "In Progress"))
+                start_btn.pack(side="left", padx=(0, 5))
+            elif t["status"] == "In Progress":
+                finish_btn = ctk.CTkButton(actions, text="Finish Tournament", font=("Roboto", 11), height=25, width=110, fg_color=COLOR_DANGER, hover_color="#A81D1D", corner_radius=6, command=lambda tid=t["id"]: self.change_tournament_status(tid, "Finished"))
+                finish_btn.pack(side="left", padx=(0, 5))
+
+            delete_btn = ctk.CTkButton(actions, text="Delete", font=("Roboto", 11), height=25, width=60, fg_color="transparent", border_width=1, border_color="#C62828", text_color="#FF4C4C", hover_color="#3A1C1C", corner_radius=6, command=lambda tid=t["id"]: self.delete_tournament(tid))
+            delete_btn.pack(side="right")
+
