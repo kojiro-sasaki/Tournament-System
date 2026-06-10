@@ -1081,3 +1081,66 @@ class AdminWindow(ctk.CTkFrame):
             details_lbl.pack(fill="x", pady=(2, 0))
 
             act_frame = ctk.CTkFrame(card, fg_color="transparent")
+            act_frame.pack(side="right", padx=15, pady=10)
+            
+            del_btn = ctk.CTkButton(
+                act_frame, 
+                text="Remove", 
+                font=("Roboto", 10), 
+                height=22, 
+                width=55, 
+                fg_color="transparent", 
+                border_width=1, 
+                border_color="#C62828", 
+                text_color="#FF4C4C", 
+                hover_color="#3A1C1C", 
+                corner_radius=6,
+                command=lambda name=t["name"]: self.remove_team(name)
+            )
+            del_btn.pack()
+
+    def add_team_event(self):
+        name = self.team_name_entry.get().strip()
+        tag = self.team_tag_entry.get().strip()
+        region = self.team_region_entry.get().strip()
+        desc = self.team_desc_text.get().strip()
+
+        self.team_error_lbl.configure(text="")
+
+        if not name or not tag or not region:
+            self.team_error_lbl.configure(text="Please fill in Name, Tag, and Region!")
+            return
+
+        if any(t["name"].lower() == name.lower() for t in self.teams):
+            self.team_error_lbl.configure(text="Team with this name already exists!")
+            return
+
+        new_t = {
+            "name": name,
+            "tag": tag,
+            "region": region,
+            "captain": "Guest Captain",
+            "desc": desc if desc else "No description provided."
+        }
+
+        # TODO: INSERT INTO teams (name, tag, region, captain, desc) VALUES (...)
+        self.teams.append(new_t)
+        # TODO: INSERT INTO activities (message) VALUES (...)
+        self.activities.append(f"Team '{name}' successfully registered in system database")
+        
+        self.team_name_entry.delete(0, "end")
+        self.team_tag_entry.delete(0, "end")
+        self.team_region_entry.delete(0, "end")
+        self.team_desc_text.delete(0, "end")
+
+        self.refresh_teams_list()
+
+    def remove_team(self, team_name):
+        for t in self.teams:
+            if t["name"] == team_name:
+                # TODO: INSERT INTO activities (message) VALUES (...)
+                self.activities.append(f"Team '{t['name']}' was removed from the database")
+                # TODO: DELETE FROM teams WHERE name = team_name
+                self.teams.remove(t)
+                break
+        self.refresh_teams_list()
