@@ -1057,3 +1057,45 @@ class AdminWindow(ctk.CTkFrame):
 
         self.refresh_teams_list()
 
+    def refresh_teams_list(self):
+        for widget in self.teams_scroll.winfo_children():
+            widget.destroy()
+
+        for t in self.teams:
+            card = ctk.CTkFrame(self.teams_scroll, fg_color="#181820", corner_radius=8, border_width=1, border_color="#2A2A35")
+            card.pack(fill="x", pady=5, padx=5)
+
+            info = ctk.CTkFrame(card, fg_color="transparent")
+            info.pack(side="left", fill="both", expand=True, padx=15, pady=10)
+
+            title_row = ctk.CTkFrame(info, fg_color="transparent")
+            title_row.pack(fill="x")
+            
+            name_lbl = ctk.CTkLabel(title_row, text=t["name"], font=("Roboto", 13, "bold"), text_color=TEXT_PRIMARY, anchor="w")
+            name_lbl.pack(side="left")
+
+            tag_lbl = ctk.CTkLabel(title_row, text=f" [{t['tag']}]", font=("Roboto", 11, "bold"), text_color=COLOR_PRIMARY)
+            tag_lbl.pack(side="left")
+
+            details_lbl = ctk.CTkLabel(info, text=f"Region: {t['region']} • Description: {t['desc']}", font=("Roboto", 11), text_color=TEXT_MUTED, anchor="w", wraplength=350, justify="left")
+            details_lbl.pack(fill="x", pady=(2, 0))
+
+            act_frame = ctk.CTkFrame(card, fg_color="transparent")
+            act_frame.pack(side="right", padx=15, pady=10)
+            
+            del_btn = ctk.CTkButton(
+                act_frame, 
+                text="Remove", 
+                font=("Roboto", 10), 
+                height=22, 
+                width=55, 
+                fg_color="transparent", 
+                border_width=1, 
+                border_color="#C62828", 
+                text_color="#FF4C4C", 
+                hover_color="#3A1C1C", 
+                corner_radius=6,
+                command=lambda name=t["name"]: self.remove_team(name)
+            )
+            del_btn.pack()
+
