@@ -910,3 +910,60 @@ class AdminWindow(ctk.CTkFrame):
                 text_color=t1_color,
                 anchor="w"
             )
+            t1_lbl.pack(side="left", fill="x", expand=True)
+        else:
+            cb1_var = ctk.StringVar(value="off")
+            cb1 = ctk.CTkCheckBox(
+                t1_frame,
+                text=match["team1"],
+                variable=cb1_var,
+                onvalue="on",
+                offvalue="off",
+                fg_color=COLOR_PRIMARY,
+                font=("Roboto", 11),
+                text_color=TEXT_PRIMARY,
+                width=16,
+                height=16
+            )
+            cb1.pack(anchor="w")
+
+        # Team 2 row
+        t2_frame = ctk.CTkFrame(teams_frame, fg_color="transparent")
+        t2_frame.pack(fill="x", pady=1)
+
+        if finished:
+            t2_winner = match["score2"] > match["score1"]
+            t2_color = "#FFFFFF" if t2_winner else TEXT_MUTED
+            t2_lbl = ctk.CTkLabel(
+                t2_frame,
+                text=("✓ " if t2_winner else "   ") + match["team2"],
+                font=("Roboto", 11, "bold" if t2_winner else "normal"),
+                text_color=t2_color,
+                anchor="w"
+            )
+            t2_lbl.pack(side="left", fill="x", expand=True)
+
+            # Reset button to allow re-selection
+            reset_btn = ctk.CTkButton(
+                t2_frame,
+                text="↺",
+                width=22,
+                height=22,
+                font=("Roboto", 13),
+                fg_color="transparent",
+                border_width=1,
+                border_color="#555566",
+                text_color=TEXT_MUTED,
+                hover_color="#2A2A38",
+                corner_radius=4,
+                command=lambda m=match: self.reset_match(m)
+            )
+            reset_btn.pack(side="right")
+        else:
+            cb2_var = ctk.StringVar(value="off")
+            cb2 = ctk.CTkCheckBox(
+                t2_frame,
+                text=match["team2"],
+                variable=cb2_var,
+                onvalue="on",
+                offvalue="off",
