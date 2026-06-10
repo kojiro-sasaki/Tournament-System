@@ -378,3 +378,46 @@ class AdminWindow(ctk.CTkFrame):
                 break
         self.refresh_tournaments_list()
 
+    def show_matches_tab(self):
+        tab_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        tab_frame.pack(fill="both", expand=True)
+
+        top_row = ctk.CTkFrame(tab_frame, fg_color="transparent")
+        top_row.pack(fill="x", pady=(0, 15))
+
+        lbl = ctk.CTkLabel(top_row, text="Manage Matches for:", font=("Roboto", 16, "bold"), text_color=TEXT_PRIMARY)
+        lbl.pack(side="left", padx=(0, 10))
+
+        t_options = {t["name"]: t["id"] for t in self.tournaments}
+        t_names = list(t_options.keys())
+        
+        current_name = "Dota 2 Champions Cup"
+        for k, v in t_options.items():
+            if v == self.selected_tournament_id:
+                current_name = k
+                break
+
+        t_selector = ctk.CTkOptionMenu(
+            top_row, 
+            values=t_names, 
+            width=250, 
+            height=35,
+            fg_color="#2A2A38", 
+            button_color="#3A3A4D",
+            command=lambda val: self.select_matches_tournament(t_options[val])
+        )
+        t_selector.set(current_name)
+        t_selector.pack(side="left")
+
+        matches_panel = ctk.CTkFrame(tab_frame, fg_color=BG_CARD, corner_radius=10, border_width=1, border_color="#2E2E3A")
+        matches_panel.pack(fill="both", expand=True)
+
+        self.matches_scroll = ctk.CTkScrollableFrame(matches_panel, fg_color="transparent")
+        self.matches_scroll.pack(fill="both", expand=True, padx=15, pady=15)
+
+        self.refresh_matches_list()
+
+    def select_matches_tournament(self, tournament_id):
+        self.selected_tournament_id = tournament_id
+        self.refresh_matches_list()
+
