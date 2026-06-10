@@ -397,3 +397,60 @@ class AdminWindow(ctk.CTkFrame):
                 current_name = k
                 break
 
+        t_selector = ctk.CTkOptionMenu(
+            top_row, 
+            values=t_names, 
+            width=250, 
+            height=35,
+            fg_color="#2A2A38", 
+            button_color="#3A3A4D",
+            command=lambda val: self.select_matches_tournament(t_options[val])
+        )
+        t_selector.set(current_name)
+        t_selector.pack(side="left")
+
+        matches_panel = ctk.CTkFrame(tab_frame, fg_color=BG_CARD, corner_radius=10, border_width=1, border_color="#2E2E3A")
+        matches_panel.pack(fill="both", expand=True)
+
+        self.matches_scroll = ctk.CTkScrollableFrame(matches_panel, fg_color="transparent")
+        self.matches_scroll.pack(fill="both", expand=True, padx=15, pady=15)
+
+        self.refresh_matches_list()
+
+    def select_matches_tournament(self, tournament_id):
+        self.selected_tournament_id = tournament_id
+        self.refresh_matches_list()
+
+    def refresh_matches_list(self):
+        for widget in self.matches_scroll.winfo_children():
+            widget.destroy()
+
+        t_matches = [m for m in self.matches if m["tournament_id"] == self.selected_tournament_id]
+
+        if not t_matches:
+            no_lbl = ctk.CTkLabel(self.matches_scroll, text="No matches generated for this tournament.", font=("Roboto", 14), text_color=TEXT_MUTED)
+            no_lbl.pack(pady=30)
+            return
+
+        for m in t_matches:
+            row = ctk.CTkFrame(self.matches_scroll, fg_color="#181820", corner_radius=8, border_width=1, border_color="#2A2A35")
+            row.pack(fill="x", pady=5, padx=5)
+
+            info_frame = ctk.CTkFrame(row, fg_color="transparent")
+            info_frame.pack(side="left", padx=15, pady=12)
+
+            round_lbl = ctk.CTkLabel(info_frame, text=m["round"], font=("Roboto", 12, "bold"), text_color=COLOR_PRIMARY, anchor="w")
+            round_lbl.pack(fill="x")
+
+            time_lbl = ctk.CTkLabel(info_frame, text=f"Time: {m['time']}", font=("Roboto", 11), text_color=TEXT_MUTED, anchor="w")
+            time_lbl.pack(fill="x")
+
+            teams_frame = ctk.CTkFrame(row, fg_color="transparent")
+            teams_frame.pack(side="left", expand=True, fill="both", padx=10)
+
+            teams_frame.grid_columnconfigure(0, weight=1)
+            teams_frame.grid_columnconfigure(1, weight=0)
+            teams_frame.grid_columnconfigure(2, weight=1)
+            teams_frame.grid_rowconfigure(0, weight=1)
+
+            t1_lbl = ctk.CTkLabel(teams_frame, text=m["team1"], font=("Roboto", 13, "bold"), text_color=TEXT_PRIMARY, anchor="e")
