@@ -3,6 +3,10 @@ from database.connection import supabase
 
 class UserRepository:
 
+    USER_FIELDS = (
+        'id, username, email, role, created_at'
+    )
+
     @staticmethod
     def get_auth_data_by_login(login: str):
         return(
@@ -20,7 +24,7 @@ class UserRepository:
         return (
             supabase
             .table('users')
-            .select('id, username, email, role, created_at')
+            .select(UserRepository.USER_FIELDS)
             .execute()
         )
 
@@ -30,7 +34,7 @@ class UserRepository:
         return(
             supabase
             .table('users')
-            .select('id, username, email, role, created_at')
+            .select(UserRepository.USER_FIELDS)
             .eq('id', user_id)
             .single()
             .execute()
@@ -42,7 +46,7 @@ class UserRepository:
         return (
             supabase
             .table('users')
-            .select('id, username, email, role, created_at')
+            .select(UserRepository.USER_FIELDS)
             .eq('username', username)
             .single()
             .execute()
@@ -54,7 +58,7 @@ class UserRepository:
         return (
             supabase
             .table('users')
-            .select('id, username, email, role, created_at')
+            .select(UserRepository.USER_FIELDS)
             .eq('email', email)
             .single()
             .execute()
@@ -84,7 +88,7 @@ class UserRepository:
         user_id: int,
         data: dict
     ):
-        allowed_fields = {'username', 'email', 'password_hash', 'role'}
+        allowed_fields = ('username', 'email', 'password_hash', 'role')
 
 
         filtered_data = {
