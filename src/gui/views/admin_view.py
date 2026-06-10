@@ -547,3 +547,8 @@ class AdminWindow(ctk.CTkFrame):
         save_btn = ctk.CTkButton(footer, text="Save Results", fg_color=COLOR_PRIMARY, hover_color="#2E6299", height=32, corner_radius=6, command=lambda m_obj=match: self.save_score_event(m_obj))
         save_btn.pack(side="right", fill="x", expand=True, padx=(5, 0))
 
+    def close_score_dialog(self):
+        if hasattr(self, 'dialog_overlay') and self.dialog_overlay:
+            self.dialog_overlay.destroy()
+            self.dialog_overlay = None
+
