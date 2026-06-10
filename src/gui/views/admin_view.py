@@ -1024,3 +1024,60 @@ class AdminWindow(ctk.CTkFrame):
         form_label = ctk.CTkLabel(form_panel, text="Add Team Profile", font=("Roboto", 16, "bold"), text_color=TEXT_PRIMARY)
         form_label.pack(anchor="w", padx=20, pady=(20, 15))
 
+        ctk.CTkLabel(form_panel, text="Team Name", font=("Roboto", 12), text_color=TEXT_MUTED).pack(anchor="w", padx=20, pady=(5, 2))
+        self.team_name_entry = ctk.CTkEntry(form_panel, placeholder_text="e.g. Natus Vincere", height=35)
+        self.team_name_entry.pack(fill="x", padx=20, pady=(0, 10))
+
+        ctk.CTkLabel(form_panel, text="Tag", font=("Roboto", 12), text_color=TEXT_MUTED).pack(anchor="w", padx=20, pady=(5, 2))
+        self.team_tag_entry = ctk.CTkEntry(form_panel, placeholder_text="e.g. NAVI", height=35)
+        self.team_tag_entry.pack(fill="x", padx=20, pady=(0, 10))
+
+        ctk.CTkLabel(form_panel, text="Region", font=("Roboto", 12), text_color=TEXT_MUTED).pack(anchor="w", padx=20, pady=(5, 2))
+        self.team_region_entry = ctk.CTkEntry(form_panel, placeholder_text="e.g. Europe", height=35)
+        self.team_region_entry.pack(fill="x", padx=20, pady=(0, 10))
+
+        ctk.CTkLabel(form_panel, text="Description", font=("Roboto", 12), text_color=TEXT_MUTED).pack(anchor="w", padx=20, pady=(5, 2))
+        self.team_desc_text = ctk.CTkEntry(form_panel, placeholder_text="Brief details about the team...", height=35)
+        self.team_desc_text.pack(fill="x", padx=20, pady=(0, 20))
+
+        self.team_error_lbl = ctk.CTkLabel(form_panel, text="", text_color="#FF4C4C", font=("Roboto", 12))
+        self.team_error_lbl.pack(pady=(0, 5))
+
+        add_btn = ctk.CTkButton(form_panel, text="Register Team", command=self.add_team_event, fg_color=COLOR_PRIMARY, hover_color="#2E6299", height=40, corner_radius=8)
+        add_btn.pack(fill="x", padx=20, pady=(0, 20))
+
+        list_panel = ctk.CTkFrame(tab_frame, fg_color=BG_CARD, corner_radius=10, border_width=1, border_color="#2E2E3A")
+        list_panel.grid(row=0, column=1, padx=(10, 0), sticky="nsew")
+
+        list_label = ctk.CTkLabel(list_panel, text="Registered Teams Database", font=("Roboto", 16, "bold"), text_color=TEXT_PRIMARY)
+        list_label.pack(anchor="w", padx=20, pady=(20, 15))
+
+        self.teams_scroll = ctk.CTkScrollableFrame(list_panel, fg_color="transparent")
+        self.teams_scroll.pack(fill="both", expand=True, padx=10, pady=(0, 15))
+
+        self.refresh_teams_list()
+
+    def refresh_teams_list(self):
+        for widget in self.teams_scroll.winfo_children():
+            widget.destroy()
+
+        for t in self.teams:
+            card = ctk.CTkFrame(self.teams_scroll, fg_color="#181820", corner_radius=8, border_width=1, border_color="#2A2A35")
+            card.pack(fill="x", pady=5, padx=5)
+
+            info = ctk.CTkFrame(card, fg_color="transparent")
+            info.pack(side="left", fill="both", expand=True, padx=15, pady=10)
+
+            title_row = ctk.CTkFrame(info, fg_color="transparent")
+            title_row.pack(fill="x")
+            
+            name_lbl = ctk.CTkLabel(title_row, text=t["name"], font=("Roboto", 13, "bold"), text_color=TEXT_PRIMARY, anchor="w")
+            name_lbl.pack(side="left")
+
+            tag_lbl = ctk.CTkLabel(title_row, text=f" [{t['tag']}]", font=("Roboto", 11, "bold"), text_color=COLOR_PRIMARY)
+            tag_lbl.pack(side="left")
+
+            details_lbl = ctk.CTkLabel(info, text=f"Region: {t['region']} • Description: {t['desc']}", font=("Roboto", 11), text_color=TEXT_MUTED, anchor="w", wraplength=350, justify="left")
+            details_lbl.pack(fill="x", pady=(2, 0))
+
+            act_frame = ctk.CTkFrame(card, fg_color="transparent")
