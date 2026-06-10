@@ -368,3 +368,13 @@ class AdminWindow(ctk.CTkFrame):
                 break
         self.refresh_tournaments_list()
 
+    def delete_tournament(self, tournament_id):
+        for t in self.tournaments:
+            if t["id"] == tournament_id:
+                # TODO: INSERT INTO activities (message) VALUES (...)
+                self.activities.append(f"Tournament '{t['name']}' was deleted")
+                # TODO: DELETE FROM tournaments WHERE id = tournament_id
+                self.tournaments.remove(t)
+                break
+        self.refresh_tournaments_list()
+
