@@ -739,3 +739,60 @@ class AdminWindow(ctk.CTkFrame):
         COL_GAP = 60
         ROW_GAP = 20
 
+        # Build column X positions dynamically based on rounds
+        num_rounds = 5 if num_teams == 16 else 4
+        col_x = [PAD_X + i * (CARD_W + COL_GAP) for i in range(num_rounds)]
+        
+        positions = {}
+        
+        if num_teams == 16:
+            # Ro16
+            ro16_y_step = CARD_H + ROW_GAP
+            ro16_ys = [PAD_Y + i * ro16_y_step for i in range(8)]
+            for i in range(8):
+                positions[f"ro16_{i}"] = (col_x[0], ro16_ys[i])
+            
+            # QF
+            qf_ys = [(ro16_ys[i*2] + ro16_ys[i*2+1]) / 2 for i in range(4)]
+            for i in range(4):
+                positions[f"qf{i}"] = (col_x[1], qf_ys[i])
+                
+            # SF
+            sf_ys = [(qf_ys[0] + qf_ys[1]) / 2, (qf_ys[2] + qf_ys[3]) / 2]
+            positions["sf0"] = (col_x[2], sf_ys[0])
+            positions["sf1"] = (col_x[2], sf_ys[1])
+            
+            # Final
+            final_y = (sf_ys[0] + sf_ys[1]) / 2
+            positions["final"] = (col_x[3], final_y)
+            positions["champion"] = (col_x[4], final_y)
+            
+        else:
+            # QF rows: 4 cards evenly spaced
+            qf_y_step = CARD_H + ROW_GAP * 4
+            qf_ys = [PAD_Y + i * qf_y_step for i in range(4)]
+            for i in range(4):
+                positions[f"qf{i}"] = (col_x[0], qf_ys[i])
+                
+            # SF
+            sf_ys = [(qf_ys[0] + qf_ys[1]) / 2, (qf_ys[2] + qf_ys[3]) / 2]
+            positions["sf0"] = (col_x[1], sf_ys[0])
+            positions["sf1"] = (col_x[1], sf_ys[1])
+            
+            # Final
+            final_y = (sf_ys[0] + sf_ys[1]) / 2
+            positions["final"] = (col_x[2], final_y)
+            positions["champion"] = (col_x[3], final_y)
+
+        # Draw connector lines FIRST
+        self._draw_bracket_lines(self.bracket_canvas, positions, CARD_W, CARD_H, num_teams)
+
+        # Embed match card widgets
+        def place_card(match, pos_name):
+            px, py = positions[pos_name]
+            frame = self._make_canvas_match_card(match, CARD_W, CARD_H)
+            self.bracket_canvas.create_window(px, py, window=frame, anchor="nw")
+
+        if num_teams == 16:
+            for i in range(8): place_card(t_matches[i], f"ro16_{i}")
+            for i in range(4): place_card(t_matches[8+i], f"qf{i}")
