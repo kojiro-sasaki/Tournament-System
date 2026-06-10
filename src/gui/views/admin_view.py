@@ -511,3 +511,60 @@ class AdminWindow(ctk.CTkFrame):
         t1_lbl.grid(row=0, column=0, pady=(0, 5))
         self.s1_entry = ctk.CTkEntry(body, placeholder_text="0", width=60, height=35, justify="center")
         self.s1_entry.insert(0, str(match["score1"]))
+        self.s1_entry.grid(row=1, column=0)
+
+        vs_lbl = ctk.CTkLabel(body, text=":", font=("Roboto", 24, "bold"), text_color=TEXT_MUTED)
+        vs_lbl.grid(row=1, column=1)
+
+        t2_lbl = ctk.CTkLabel(body, text=match["team2"], font=("Roboto", 12, "bold"), text_color=TEXT_PRIMARY, wraplength=120)
+        t2_lbl.grid(row=0, column=2, pady=(0, 5))
+        self.s2_entry = ctk.CTkEntry(body, placeholder_text="0", width=60, height=35, justify="center")
+        self.s2_entry.insert(0, str(match["score2"]))
+        self.s2_entry.grid(row=1, column=2)
+
+        status_row = ctk.CTkFrame(dialog, fg_color="transparent")
+        status_row.pack(fill="x", padx=30, pady=(10, 15))
+        
+        status_lbl = ctk.CTkLabel(status_row, text="Match Status: ", font=("Roboto", 12), text_color=TEXT_MUTED)
+        status_lbl.pack(side="left")
+
+        self.m_status_menu = ctk.CTkOptionMenu(
+            status_row, 
+            values=["Scheduled", "In Progress", "Finished"], 
+            height=28,
+            fg_color="#2A2A38", 
+            button_color="#3A3A4D"
+        )
+        self.m_status_menu.set(match["status"])
+        self.m_status_menu.pack(side="left", fill="x", expand=True, padx=(5, 0))
+
+        footer = ctk.CTkFrame(dialog, fg_color="transparent")
+        footer.pack(fill="x", side="bottom", pady=15, padx=30)
+
+        cancel_btn = ctk.CTkButton(footer, text="Cancel", fg_color="transparent", border_width=1, border_color="#555566", hover_color="#2C2C35", height=32, corner_radius=6, command=self.close_score_dialog)
+        cancel_btn.pack(side="left", fill="x", expand=True, padx=(0, 5))
+
+        save_btn = ctk.CTkButton(footer, text="Save Results", fg_color=COLOR_PRIMARY, hover_color="#2E6299", height=32, corner_radius=6, command=lambda m_obj=match: self.save_score_event(m_obj))
+        save_btn.pack(side="right", fill="x", expand=True, padx=(5, 0))
+
+    def close_score_dialog(self):
+        if hasattr(self, 'dialog_overlay') and self.dialog_overlay:
+            self.dialog_overlay.destroy()
+            self.dialog_overlay = None
+
+    def save_score_event(self, match):
+        s1_str = self.s1_entry.get().strip()
+        s2_str = self.s2_entry.get().strip()
+        new_status = self.m_status_menu.get()
+
+        try:
+            score1 = int(s1_str) if s1_str else 0
+            score2 = int(s2_str) if s2_str else 0
+        except ValueError:
+            self.s1_entry.configure(border_color=COLOR_DANGER)
+            self.s2_entry.configure(border_color=COLOR_DANGER)
+            return
+
+        match["score1"] = score1
+        match["score2"] = score2
+        match["status"] = new_status
