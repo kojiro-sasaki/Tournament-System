@@ -454,3 +454,60 @@ class AdminWindow(ctk.CTkFrame):
             teams_frame.grid_rowconfigure(0, weight=1)
 
             t1_lbl = ctk.CTkLabel(teams_frame, text=m["team1"], font=("Roboto", 13, "bold"), text_color=TEXT_PRIMARY, anchor="e")
+            t1_lbl.grid(row=0, column=0, sticky="ew", padx=10)
+
+            vs_text = f" {m['score1']} - {m['score2']} " if m["status"] in ["Finished", "In Progress"] else "   VS   "
+            vs_lbl = ctk.CTkLabel(teams_frame, text=vs_text, font=("Roboto", 14, "bold"), text_color=COLOR_PRIMARY)
+            vs_lbl.grid(row=0, column=1)
+
+            t2_lbl = ctk.CTkLabel(teams_frame, text=m["team2"], font=("Roboto", 13, "bold"), text_color=TEXT_PRIMARY, anchor="w")
+            t2_lbl.grid(row=0, column=2, sticky="ew", padx=10)
+
+            right_frame = ctk.CTkFrame(row, fg_color="transparent")
+            right_frame.pack(side="right", padx=15, pady=12)
+
+            status_color = COLOR_SUCCESS if m["status"] == "Finished" else (COLOR_PRIMARY if m["status"] == "In Progress" else TEXT_MUTED)
+            status_badge = ctk.CTkLabel(
+                right_frame, 
+                text=f"  {m['status'].upper()}  ", 
+                font=("Roboto", 10, "bold"), 
+                text_color=TEXT_PRIMARY,
+                fg_color=status_color,
+                corner_radius=6,
+                height=22
+            )
+            status_badge.pack(side="left", padx=15)
+
+            edit_btn = ctk.CTkButton(
+                right_frame, 
+                text="Edit Score", 
+                font=("Roboto", 11), 
+                height=28, 
+                width=85, 
+                fg_color="#34495E", 
+                hover_color="#2C3E50", 
+                corner_radius=6,
+                command=lambda match_obj=m: self.open_score_dialog(match_obj)
+            )
+            edit_btn.pack(side="left")
+
+    def open_score_dialog(self, match):
+        self.dialog_overlay = ctk.CTkFrame(self.content_frame, fg_color="#0A0A0F")
+        self.dialog_overlay.place(relx=0, rely=0, relwidth=1, relheight=1)
+
+        dialog = ctk.CTkFrame(self.dialog_overlay, fg_color=BG_CARD, corner_radius=12, border_width=1, border_color="#3E3E52", width=400, height=280)
+        dialog.place(relx=0.5, rely=0.5, anchor="center")
+        dialog.pack_propagate(False)
+
+        title_lbl = ctk.CTkLabel(dialog, text=f"Update Score - {match['round']}", font=("Roboto", 16, "bold"), text_color=TEXT_PRIMARY)
+        title_lbl.pack(pady=(15, 10))
+
+        body = ctk.CTkFrame(dialog, fg_color="transparent")
+        body.pack(fill="x", padx=30, pady=10)
+        body.grid_columnconfigure((0, 2), weight=4)
+        body.grid_columnconfigure(1, weight=2)
+
+        t1_lbl = ctk.CTkLabel(body, text=match["team1"], font=("Roboto", 12, "bold"), text_color=TEXT_PRIMARY, wraplength=120)
+        t1_lbl.grid(row=0, column=0, pady=(0, 5))
+        self.s1_entry = ctk.CTkEntry(body, placeholder_text="0", width=60, height=35, justify="center")
+        self.s1_entry.insert(0, str(match["score1"]))
