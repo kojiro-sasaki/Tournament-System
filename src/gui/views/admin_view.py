@@ -682,3 +682,60 @@ class AdminWindow(ctk.CTkFrame):
             canvas.create_line(mid_x, y2, x2, y2, fill=LINE_COLOR, width=LINE_WIDTH)
 
         if num_teams == 16:
+            for i in range(4):
+                rx0, ry0 = mid_right(*positions[f"ro16_{i*2}"])
+                rx1, ry1 = mid_right(*positions[f"ro16_{i*2+1}"])
+                lx_qf, ly_qf = mid_left(*positions[f"qf{i}"])
+                draw_connector(rx0, ry0, lx_qf, ly_qf)
+
+        rx0, ry0 = mid_right(*positions["qf0"])
+        rx1, ry1 = mid_right(*positions["qf1"])
+        lx4, ly4 = mid_left(*positions["sf0"])
+        draw_connector(rx0, ry0, lx4, ly4)
+        draw_connector(rx1, ry1, lx4, ly4)
+
+        rx2, ry2 = mid_right(*positions["qf2"])
+        rx3, ry3 = mid_right(*positions["qf3"])
+        lx5, ly5 = mid_left(*positions["sf1"])
+        draw_connector(rx2, ry2, lx5, ly5)
+        draw_connector(rx3, ry3, lx5, ly5)
+
+        rx4, ry4 = mid_right(*positions["sf0"])
+        rx5, ry5 = mid_right(*positions["sf1"])
+        lx6, ly6 = mid_left(*positions["final"])
+        draw_connector(rx4, ry4, lx6, ly6)
+        draw_connector(rx5, ry5, lx6, ly6)
+
+        rx6, ry6 = mid_right(*positions["final"])
+        lx7, ly7 = mid_left(*positions["champion"])
+        draw_connector(rx6, ry6, lx7, ly7)
+
+    def refresh_bracket_view(self):
+        if not hasattr(self, "bracket_canvas") or not self.bracket_canvas.winfo_exists():
+            return
+
+        # Clear everything on the canvas
+        self.bracket_canvas.delete("all")
+
+        t_matches = [m for m in self.matches if m["tournament_id"] == self.selected_tournament_id]
+
+        if not t_matches or len(t_matches) not in (7, 15):
+            self.bracket_canvas.create_text(
+                300, 80,
+                text="A standard bracket requires 7 (8-team) or 15 (16-team) matches.",
+                fill=TEXT_MUTED,
+                font=("Roboto", 13)
+            )
+            self.bracket_canvas.configure(scrollregion=(0, 0, 600, 160))
+            return
+            
+        num_teams = 16 if len(t_matches) == 15 else 8
+
+        # Layout constants
+        PAD_X = 30
+        PAD_Y = 30
+        CARD_W = 220
+        CARD_H = 100
+        COL_GAP = 60
+        ROW_GAP = 20
+
