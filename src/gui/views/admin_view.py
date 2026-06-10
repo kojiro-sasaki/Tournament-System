@@ -226,3 +226,60 @@ class AdminWindow(ctk.CTkFrame):
 
         ctk.CTkLabel(form_panel, text="Select Teams", font=("Roboto", 12), text_color=TEXT_MUTED).pack(anchor="w", padx=20, pady=(5, 2))
         self.t_teams_scroll = ctk.CTkScrollableFrame(form_panel, fg_color="#181820", height=120, border_width=1, border_color="#2E2E3A")
+        self.t_teams_scroll.pack(fill="x", padx=20, pady=(0, 20))
+        
+        self.team_checkboxes = {}
+        for t in self.teams:
+            var = ctk.StringVar(value="off")
+            cb = ctk.CTkCheckBox(self.t_teams_scroll, text=t["name"], variable=var, onvalue="on", offvalue="off", fg_color=COLOR_PRIMARY, text_color=TEXT_PRIMARY, font=("Roboto", 12))
+            cb.pack(anchor="w", pady=4, padx=5)
+            self.team_checkboxes[t["name"]] = var
+
+        self.t_error_lbl = ctk.CTkLabel(form_panel, text="", text_color="#FF4C4C", font=("Roboto", 12))
+        self.t_error_lbl.pack(pady=(0, 5))
+
+        create_btn = ctk.CTkButton(form_panel, text="Create Tournament", command=self.create_tournament_event, fg_color=COLOR_PRIMARY, hover_color="#2E6299", height=40, corner_radius=8)
+        create_btn.pack(fill="x", padx=20, pady=(0, 20))
+
+        list_panel = ctk.CTkFrame(tab_frame, fg_color=BG_CARD, corner_radius=10, border_width=1, border_color="#2E2E3A")
+        list_panel.grid(row=0, column=1, padx=(10, 0), sticky="nsew")
+
+        list_label = ctk.CTkLabel(list_panel, text="Active Tournaments", font=("Roboto", 16, "bold"), text_color=TEXT_PRIMARY)
+        list_label.pack(anchor="w", padx=20, pady=(20, 15))
+
+        self.tournaments_scroll = ctk.CTkScrollableFrame(list_panel, fg_color="transparent")
+        self.tournaments_scroll.pack(fill="both", expand=True, padx=10, pady=(0, 15))
+
+        self.refresh_tournaments_list()
+
+    def refresh_tournaments_list(self):
+        for widget in self.tournaments_scroll.winfo_children():
+            widget.destroy()
+
+        for t in self.tournaments:
+            card = ctk.CTkFrame(self.tournaments_scroll, fg_color="#181820", corner_radius=8, border_width=1, border_color="#2A2A35")
+            card.pack(fill="x", pady=6, padx=5)
+
+            details = ctk.CTkFrame(card, fg_color="transparent")
+            details.pack(fill="x", padx=15, pady=10)
+
+            name_lbl = ctk.CTkLabel(details, text=t["name"], font=("Roboto", 14, "bold"), text_color=TEXT_PRIMARY, anchor="w")
+            name_lbl.pack(fill="x")
+
+            sub_lbl = ctk.CTkLabel(
+                details, 
+                text=f"{t['game']} • Max Teams: {t['max_teams']} • Date: {t['date']}", 
+                font=("Roboto", 11), 
+                text_color=TEXT_MUTED,
+                anchor="w"
+            )
+            sub_lbl.pack(fill="x")
+
+            status_frame = ctk.CTkFrame(card, fg_color="transparent")
+            status_frame.pack(fill="x", padx=15, pady=(0, 10))
+
+            color = COLOR_WARNING if t["status"] == "Draft" else (COLOR_PRIMARY if t["status"] == "Registration Open" else (COLOR_SUCCESS if t["status"] == "In Progress" else COLOR_DANGER))
+            badge = ctk.CTkLabel(
+                status_frame, 
+                text=f"  {t['status'].upper()}  ", 
+                font=("Roboto", 10, "bold"), 
