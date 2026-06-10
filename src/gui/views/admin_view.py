@@ -967,3 +967,60 @@ class AdminWindow(ctk.CTkFrame):
                 variable=cb2_var,
                 onvalue="on",
                 offvalue="off",
+                fg_color=COLOR_PRIMARY,
+                font=("Roboto", 11),
+                text_color=TEXT_PRIMARY,
+                width=16,
+                height=16
+            )
+            cb2.pack(anchor="w")
+
+            def on_cb1():
+                if cb1_var.get() == "on":
+                    cb2_var.set("off")
+                    self.set_winner(match, 1)
+
+            def on_cb2():
+                if cb2_var.get() == "on":
+                    cb1_var.set("off")
+                    self.set_winner(match, 2)
+
+            cb1.configure(command=on_cb1)
+            cb2.configure(command=on_cb2)
+
+        return card
+
+    def _make_champion_card(self, team_name, w, h):
+        frame = ctk.CTkFrame(
+            self.bracket_canvas,
+            fg_color="#241B00",
+            corner_radius=8,
+            width=w,
+            height=h,
+            border_width=2,
+            border_color="#FFD700"
+        )
+        frame.pack_propagate(False)
+
+        crown_lbl = ctk.CTkLabel(frame, text="🏆 CHAMPION", font=("Roboto", 10, "bold"), text_color="#FFD700")
+        crown_lbl.pack(pady=(8, 0))
+
+        team_lbl = ctk.CTkLabel(frame, text=team_name, font=("Roboto", 12, "bold"), text_color="#FFFFFF", wraplength=w - 20)
+        team_lbl.pack(pady=(2, 8))
+
+        return frame
+
+    def show_teams_tab(self):
+        tab_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        tab_frame.pack(fill="both", expand=True)
+
+        tab_frame.grid_columnconfigure(0, weight=4)
+        tab_frame.grid_columnconfigure(1, weight=6)
+        tab_frame.grid_rowconfigure(0, weight=1)
+
+        form_panel = ctk.CTkFrame(tab_frame, fg_color=BG_CARD, corner_radius=10, border_width=1, border_color="#2E2E3A")
+        form_panel.grid(row=0, column=0, padx=(0, 10), sticky="nsew")
+
+        form_label = ctk.CTkLabel(form_panel, text="Add Team Profile", font=("Roboto", 16, "bold"), text_color=TEXT_PRIMARY)
+        form_label.pack(anchor="w", padx=20, pady=(20, 15))
+
