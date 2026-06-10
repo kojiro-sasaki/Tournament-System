@@ -552,3 +552,58 @@ class AdminWindow(ctk.CTkFrame):
             self.dialog_overlay.destroy()
             self.dialog_overlay = None
 
+    def save_score_event(self, match):
+        s1_str = self.s1_entry.get().strip()
+        s2_str = self.s2_entry.get().strip()
+        new_status = self.m_status_menu.get()
+
+        try:
+            score1 = int(s1_str) if s1_str else 0
+            score2 = int(s2_str) if s2_str else 0
+        except ValueError:
+            self.s1_entry.configure(border_color=COLOR_DANGER)
+            self.s2_entry.configure(border_color=COLOR_DANGER)
+            return
+
+        match["score1"] = score1
+        match["score2"] = score2
+        match["status"] = new_status
+
+        if new_status == "Finished":
+            # TODO: INSERT INTO activities (message) VALUES (...)
+            self.activities.append(f"Match {match['team1']} vs {match['team2']} finished with score {score1}:{score2}")
+            self.update_bracket_flow(match)
+        else:
+            # TODO: INSERT INTO activities (message) VALUES (...)
+            self.activities.append(f"Match {match['team1']} vs {match['team2']} updated to '{new_status}'")
+            
+        # TODO: UPDATE matches SET score1 = score1, score2 = score2, status = new_status WHERE id = match['id']
+
+        self.close_score_dialog()
+        
+        if self.current_tab == "Matches":
+            self.refresh_matches_list()
+        elif self.current_tab == "Bracket":
+            self.refresh_bracket_view()
+
+    def update_bracket_flow(self, match):
+        t_id = match["tournament_id"]
+        t_matches = [m for m in self.matches if m["tournament_id"] == t_id]
+        if len(t_matches) not in (7, 15):
+            return
+
+        winner = match["team1"] if match["score1"] > match["score2"] else match["team2"]
+        try:
+            m_idx = t_matches.index(match)
+        except ValueError:
+            return
+
+        next_idx = get_next_match_index(m_idx, len(t_matches))
+        if next_idx < len(t_matches):
+            if m_idx % 2 == 0:
+                # TODO: UPDATE matches SET team1 = winner WHERE id = t_matches[next_idx]['id']
+                t_matches[next_idx]["team1"] = winner
+            else:
+                # TODO: UPDATE matches SET team2 = winner WHERE id = t_matches[next_idx]['id']
+                t_matches[next_idx]["team2"] = winner
+
