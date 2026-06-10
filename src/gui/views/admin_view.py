@@ -867,3 +867,126 @@ class AdminWindow(ctk.CTkFrame):
 
         self.refresh_bracket_view()
 
+    def _make_canvas_match_card(self, match, w, h):
+        """Build a match card widget to be placed on the canvas via create_window."""
+        finished = match["status"] == "Finished"
+        border_color = "#2E7D32" if finished else "#5A2E8A"
+
+        card = ctk.CTkFrame(
+            self.bracket_canvas,
+            fg_color="#13131A",
+            corner_radius=6,
+            border_width=2,
+            border_color=border_color,
+            width=w,
+            height=h
+        )
+        card.pack_propagate(False)
+        card.grid_propagate(False)
+
+        # Round label at top
+        round_lbl = ctk.CTkLabel(
+            card,
+            text=match["round"],
+            font=("Roboto", 9),
+            text_color=TEXT_MUTED
+        )
+        round_lbl.pack(anchor="w", padx=8, pady=(4, 0))
+
+        teams_frame = ctk.CTkFrame(card, fg_color="transparent")
+        teams_frame.pack(fill="both", expand=True, padx=6, pady=(0, 4))
+
+        # Team 1 row
+        t1_frame = ctk.CTkFrame(teams_frame, fg_color="transparent")
+        t1_frame.pack(fill="x", pady=1)
+
+        if finished:
+            t1_winner = match["score1"] > match["score2"]
+            t1_color = "#FFFFFF" if t1_winner else TEXT_MUTED
+            t1_lbl = ctk.CTkLabel(
+                t1_frame,
+                text=("✓ " if t1_winner else "   ") + match["team1"],
+                font=("Roboto", 11, "bold" if t1_winner else "normal"),
+                text_color=t1_color,
+                anchor="w"
+            )
+            t1_lbl.pack(side="left", fill="x", expand=True)
+        else:
+            cb1_var = ctk.StringVar(value="off")
+            cb1 = ctk.CTkCheckBox(
+                t1_frame,
+                text=match["team1"],
+                variable=cb1_var,
+                onvalue="on",
+                offvalue="off",
+                fg_color=COLOR_PRIMARY,
+                font=("Roboto", 11),
+                text_color=TEXT_PRIMARY,
+                width=16,
+                height=16
+            )
+            cb1.pack(anchor="w")
+
+        # Team 2 row
+        t2_frame = ctk.CTkFrame(teams_frame, fg_color="transparent")
+        t2_frame.pack(fill="x", pady=1)
+
+        if finished:
+            t2_winner = match["score2"] > match["score1"]
+            t2_color = "#FFFFFF" if t2_winner else TEXT_MUTED
+            t2_lbl = ctk.CTkLabel(
+                t2_frame,
+                text=("✓ " if t2_winner else "   ") + match["team2"],
+                font=("Roboto", 11, "bold" if t2_winner else "normal"),
+                text_color=t2_color,
+                anchor="w"
+            )
+            t2_lbl.pack(side="left", fill="x", expand=True)
+
+            # Reset button to allow re-selection
+            reset_btn = ctk.CTkButton(
+                t2_frame,
+                text="↺",
+                width=22,
+                height=22,
+                font=("Roboto", 13),
+                fg_color="transparent",
+                border_width=1,
+                border_color="#555566",
+                text_color=TEXT_MUTED,
+                hover_color="#2A2A38",
+                corner_radius=4,
+                command=lambda m=match: self.reset_match(m)
+            )
+            reset_btn.pack(side="right")
+        else:
+            cb2_var = ctk.StringVar(value="off")
+            cb2 = ctk.CTkCheckBox(
+                t2_frame,
+                text=match["team2"],
+                variable=cb2_var,
+                onvalue="on",
+                offvalue="off",
+                fg_color=COLOR_PRIMARY,
+                font=("Roboto", 11),
+                text_color=TEXT_PRIMARY,
+                width=16,
+                height=16
+            )
+            cb2.pack(anchor="w")
+
+            def on_cb1():
+                if cb1_var.get() == "on":
+                    cb2_var.set("off")
+                    self.set_winner(match, 1)
+
+            def on_cb2():
+                if cb2_var.get() == "on":
+                    cb1_var.set("off")
+                    self.set_winner(match, 2)
+
+            cb1.configure(command=on_cb1)
+            cb2.configure(command=on_cb2)
+
+        return card
+
