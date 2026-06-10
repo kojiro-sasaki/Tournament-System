@@ -283,3 +283,60 @@ class AdminWindow(ctk.CTkFrame):
                 status_frame, 
                 text=f"  {t['status'].upper()}  ", 
                 font=("Roboto", 10, "bold"), 
+                text_color=TEXT_PRIMARY,
+                fg_color=color,
+                corner_radius=6,
+                height=22
+            )
+            badge.pack(side="left")
+
+            actions = ctk.CTkFrame(card, fg_color="transparent")
+            actions.pack(fill="x", padx=15, pady=(0, 10))
+
+            if t["status"] == "Draft":
+                open_reg_btn = ctk.CTkButton(actions, text="Open Registration", font=("Roboto", 11), height=25, width=110, fg_color="#34495E", hover_color="#2C3E50", corner_radius=6, command=lambda tid=t["id"]: self.change_tournament_status(tid, "Registration Open"))
+                open_reg_btn.pack(side="left", padx=(0, 5))
+            elif t["status"] == "Registration Open":
+                start_btn = ctk.CTkButton(actions, text="Start Tournament", font=("Roboto", 11), height=25, width=110, fg_color=COLOR_SUCCESS, hover_color="#236127", corner_radius=6, command=lambda tid=t["id"]: self.change_tournament_status(tid, "In Progress"))
+                start_btn.pack(side="left", padx=(0, 5))
+            elif t["status"] == "In Progress":
+                finish_btn = ctk.CTkButton(actions, text="Finish Tournament", font=("Roboto", 11), height=25, width=110, fg_color=COLOR_DANGER, hover_color="#A81D1D", corner_radius=6, command=lambda tid=t["id"]: self.change_tournament_status(tid, "Finished"))
+                finish_btn.pack(side="left", padx=(0, 5))
+
+            delete_btn = ctk.CTkButton(actions, text="Delete", font=("Roboto", 11), height=25, width=60, fg_color="transparent", border_width=1, border_color="#C62828", text_color="#FF4C4C", hover_color="#3A1C1C", corner_radius=6, command=lambda tid=t["id"]: self.delete_tournament(tid))
+            delete_btn.pack(side="right")
+
+    def create_tournament_event(self):
+        name = self.t_name_entry.get().strip()
+        game = self.t_game_menu.get()
+        max_teams = int(self.t_teams_menu.get())
+        date_str = self.t_date_entry.get().strip()
+
+        self.t_error_lbl.configure(text="")
+
+        if not name:
+            self.t_error_lbl.configure(text="Please enter a tournament name!")
+            return
+
+        try:
+            datetime.datetime.strptime(date_str, "%Y-%m-%d")
+        except ValueError:
+            self.t_error_lbl.configure(text="Invalid date format! Use YYYY-MM-DD")
+            return
+
+        selected_teams = [t_name for t_name, var in self.team_checkboxes.items() if var.get() == "on"]
+        if len(selected_teams) != max_teams:
+            self.t_error_lbl.configure(text=f"Please select exactly {max_teams} teams!")
+            return
+
+        new_id = max([t["id"] for t in self.tournaments]) + 1 if self.tournaments else 1
+        new_t = {
+            "id": new_id,
+            "name": name,
+            "game": game,
+            "max_teams": max_teams,
+            "status": "Draft",
+            "registered_teams": len(selected_teams),
+            "date": date_str,
+            "teams": selected_teams
+        }
