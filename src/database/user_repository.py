@@ -88,7 +88,12 @@ class UserRepository:
         user_id: int,
         data: dict
     ):
-        allowed_fields = ('username', 'email', 'password_hash', 'role')
+        allowed_fields = {
+            'username',
+            'email',
+            'password_hash',
+            'role'
+        }
 
 
         filtered_data = {
