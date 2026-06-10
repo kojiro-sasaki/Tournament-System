@@ -796,3 +796,60 @@ class AdminWindow(ctk.CTkFrame):
         if num_teams == 16:
             for i in range(8): place_card(t_matches[i], f"ro16_{i}")
             for i in range(4): place_card(t_matches[8+i], f"qf{i}")
+            for i in range(2): place_card(t_matches[12+i], f"sf{i}")
+            place_card(t_matches[14], "final")
+            finals = t_matches[14]
+        else:
+            for i in range(4): place_card(t_matches[i], f"qf{i}")
+            for i in range(2): place_card(t_matches[4+i], f"sf{i}")
+            place_card(t_matches[6], "final")
+            finals = t_matches[6]
+
+        # Champion card
+        winner_name = "TBD"
+        if finals["status"] == "Finished":
+            winner_name = finals["team1"] if finals["score1"] > finals["score2"] else finals["team2"]
+        champ_frame = self._make_champion_card(winner_name, CARD_W, CARD_H)
+        cx, cy = positions["champion"]
+        self.bracket_canvas.create_window(cx, cy, window=champ_frame, anchor="nw")
+
+        # Update scroll region
+        total_w = cx + CARD_W + PAD_X
+        if num_teams == 16:
+            total_h = max(ro16_ys[7] + CARD_H, cy + CARD_H) + PAD_Y
+        else:
+            total_h = max(qf_ys[3] + CARD_H, cy + CARD_H) + PAD_Y
+        self.bracket_canvas.configure(scrollregion=(0, 0, total_w, total_h))
+
+    def set_winner(self, match, winner_index, cb1=None, cb2=None):
+        if winner_index == 1:
+            match["score1"] = 1
+            match["score2"] = 0
+        else:
+            match["score1"] = 0
+            match["score2"] = 1
+            
+        # TODO: UPDATE matches SET score1 = match['score1'], score2 = match['score2'], status = 'Finished' WHERE id = match['id']
+        match["status"] = "Finished"
+        self.update_bracket_flow(match)
+        self.refresh_bracket_view()
+
+    def reset_match(self, match):
+        """Reset a finished match back to Scheduled so the winner can be changed."""
+        # TODO: UPDATE matches SET score1 = 0, score2 = 0, status = 'Scheduled' WHERE id = match['id']
+        match["score1"] = 0
+        match["score2"] = 0
+        match["status"] = "Scheduled"
+        
+        t_matches = [m for m in self.matches if m["tournament_id"] == match["tournament_id"]]
+        if len(t_matches) not in (7, 15):
+            self.refresh_bracket_view()
+            return
+            
+        try:
+            m_idx = t_matches.index(match)
+        except ValueError:
+            self.refresh_bracket_view()
+            return
+            
+        current = m_idx
