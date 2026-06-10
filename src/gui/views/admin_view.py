@@ -340,3 +340,60 @@ class AdminWindow(ctk.CTkFrame):
             "date": date_str,
             "teams": selected_teams
         }
+
+        # TODO: INSERT INTO tournaments (id, name, game, max_teams, status, registered_teams, date) VALUES (...)
+        self.tournaments.append(new_t)
+        # TODO: INSERT INTO activities (message) VALUES (...)
+        self.activities.append(f"Tournament '{name}' created successfully as 'Draft'")
+        
+        if max_teams in (8, 16):
+            match_id_start = max([m["id"] for m in self.matches]) + 1 if self.matches else 1
+            new_matches = generate_matches(new_id, selected_teams, max_teams, match_id_start)
+            # TODO: INSERT INTO matches (id, tournament_id, round, team1, team2) VALUES (...)
+            self.matches.extend(new_matches)
+
+        self.t_name_entry.delete(0, "end")
+        for var in self.team_checkboxes.values():
+            var.set("off")
+        
+        self.refresh_tournaments_list()
+
+    def change_tournament_status(self, tournament_id, new_status):
+        for t in self.tournaments:
+            if t["id"] == tournament_id:
+                # TODO: UPDATE tournaments SET status = new_status WHERE id = tournament_id
+                t["status"] = new_status
+                # TODO: INSERT INTO activities (message) VALUES (...)
+                self.activities.append(f"Tournament '{t['name']}' status changed to '{new_status}'")
+                break
+        self.refresh_tournaments_list()
+
+    def delete_tournament(self, tournament_id):
+        for t in self.tournaments:
+            if t["id"] == tournament_id:
+                # TODO: INSERT INTO activities (message) VALUES (...)
+                self.activities.append(f"Tournament '{t['name']}' was deleted")
+                # TODO: DELETE FROM tournaments WHERE id = tournament_id
+                self.tournaments.remove(t)
+                break
+        self.refresh_tournaments_list()
+
+    def show_matches_tab(self):
+        tab_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        tab_frame.pack(fill="both", expand=True)
+
+        top_row = ctk.CTkFrame(tab_frame, fg_color="transparent")
+        top_row.pack(fill="x", pady=(0, 15))
+
+        lbl = ctk.CTkLabel(top_row, text="Manage Matches for:", font=("Roboto", 16, "bold"), text_color=TEXT_PRIMARY)
+        lbl.pack(side="left", padx=(0, 10))
+
+        t_options = {t["name"]: t["id"] for t in self.tournaments}
+        t_names = list(t_options.keys())
+        
+        current_name = "Dota 2 Champions Cup"
+        for k, v in t_options.items():
+            if v == self.selected_tournament_id:
+                current_name = k
+                break
+
