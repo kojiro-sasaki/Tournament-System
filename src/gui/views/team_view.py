@@ -118,3 +118,48 @@ class TeamWindow(ctk.CTkFrame):
         )
         logout_btn.grid(row=6, column=0, padx=10, pady=25, sticky="ew")
 
+    def select_tab(self, tab_name):
+        if self.current_tab == tab_name:
+            return
+
+        for name, btn in self.sidebar_buttons.items():
+            if name == tab_name:
+                btn.configure(fg_color=COLOR_PRIMARY, hover_color=COLOR_PRIMARY)
+            else:
+                btn.configure(fg_color="transparent", hover_color="#272738")
+
+        self.current_tab = tab_name
+
+        for widget in self.content_frame.winfo_children():
+            widget.destroy()
+
+        if tab_name == "Dashboard":
+            self.show_dashboard_tab()
+        elif tab_name == "My Team":
+            self.show_my_team_tab()
+        elif tab_name == "Tournaments":
+            self.show_tournaments_tab()
+        elif tab_name == "Bracket":
+            self.show_bracket_tab()
+
+    def show_dashboard_tab(self):
+        tab_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        tab_frame.pack(fill="both", expand=True)
+
+        header_label = ctk.CTkLabel(tab_frame, text=f"Welcome, {self.username}!", font=("Roboto", 24, "bold"), text_color=TEXT_PRIMARY)
+        header_label.pack(anchor="w", pady=(0, 20))
+
+        info_panel = ctk.CTkFrame(tab_frame, fg_color=BG_CARD, corner_radius=10, border_width=1, border_color="#2E2E3A")
+        info_panel.pack(fill="both", expand=True)
+
+        title = ctk.CTkLabel(info_panel, text="Team Status Overview", font=("Roboto", 16, "bold"), text_color=TEXT_PRIMARY)
+        title.pack(anchor="w", padx=20, pady=(15, 10))
+
+        status_text = "No team registered yet. Go to 'My Team' to create one."
+        if self.my_team:
+            status_text = f"Your team '{self.my_team['name']} [{self.my_team['tag']}]' is active.\n" \
+                          f"You have registered for {len(self.registered_tournaments)} tournament(s)."
+
+        desc_lbl = ctk.CTkLabel(info_panel, text=status_text, font=("Roboto", 14), text_color=TEXT_PRIMARY, justify="left")
+        desc_lbl.pack(anchor="w", padx=20, pady=10)
+
