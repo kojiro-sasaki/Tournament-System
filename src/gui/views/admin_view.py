@@ -80,3 +80,120 @@ class AdminWindow(ctk.CTkFrame):
         )
         logout_btn.grid(row=7, column=0, padx=10, pady=25, sticky="ew")
 
+    def select_tab(self, tab_name):
+        if self.current_tab == tab_name:
+            return
+
+        for name, btn in self.sidebar_buttons.items():
+            active = name == tab_name
+            btn.configure(
+                fg_color=COLOR_PRIMARY if active else "transparent",
+                hover_color=COLOR_PRIMARY if active else "#272738"
+            )
+
+        self.current_tab = tab_name
+        clear(self.content_frame)
+
+        {
+            "Dashboard": self.show_dashboard_tab,
+            "Tournaments": self.show_tournaments_tab,
+            "Matches": self.show_matches_tab,
+            "Bracket": self.show_bracket_tab,
+            "Teams": self.show_teams_tab,
+        }[tab_name]()
+
+    # ------------------------------------------------------------------
+    # Dashboard
+    # ------------------------------------------------------------------
+    def show_dashboard_tab(self):
+        tab_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        tab_frame.pack(fill="both", expand=True)
+
+        label(tab_frame, "Welcome, Administrator!", size=24, bold=True).pack(anchor="w", pady=(0, 20))
+
+        stats_frame = ctk.CTkFrame(tab_frame, fg_color="transparent")
+        stats_frame.pack(fill="x", pady=(0, 20))
+        stats_frame.grid_columnconfigure((0, 1, 2), weight=1, uniform="equal")
+
+        active_matches_count = sum(1 for m in self.matches if m["status"] in ("In Progress", "Scheduled"))
+        for col, (title, value, icon) in enumerate([
+            ("Total Tournaments", str(len(self.tournaments)), "🏆"),
+            ("Remaining Matches", str(active_matches_count), "⚔️"),
+            ("Registered Teams", str(len(self.teams)), "👥"),
+        ]):
+            self.create_stat_card(stats_frame, col, title, value, icon)
+
+        activity_panel = card(tab_frame)
+        activity_panel.pack(fill="both", expand=True)
+        panel_title(activity_panel, "Recent Activities Log", pady=(15, 10))
+
+        log_frame = ctk.CTkScrollableFrame(activity_panel, fg_color="transparent")
+        log_frame.pack(fill="both", expand=True, padx=10, pady=(0, 15))
+
+        for activity in reversed(self.activities):
+            row = ctk.CTkFrame(log_frame, fg_color=BG_ROW, height=40, corner_radius=6)
+            row.pack(fill="x", pady=4, padx=5)
+            row.pack_propagate(False)
+
+            label(row, "●", size=12, color=COLOR_PRIMARY).pack(side="left", padx=(15, 10))
+            label(row, activity, size=13).pack(side="left", fill="both")
+            label(row, "Just now", size=11, color=TEXT_MUTED).pack(side="right", padx=15)
+
+    def create_stat_card(self, parent, column, title, value, icon):
+        c = card(parent, height=100)
+        c.grid(row=0, column=column, padx=8, sticky="ew")
+        c.pack_propagate(False)
+
+        label(c, icon, size=32, color=COLOR_PRIMARY).pack(side="left", padx=20)
+
+        info_frame = ctk.CTkFrame(c, fg_color="transparent")
+        info_frame.pack(side="left", fill="both", expand=True, pady=15)
+
+        label(info_frame, value, size=24, bold=True, anchor="w").pack(fill="x")
+        label(info_frame, title, size=12, color=TEXT_MUTED, anchor="w").pack(fill="x")
+
+    # ------------------------------------------------------------------
+    # Tournaments tab
+    # ------------------------------------------------------------------
+    def show_tournaments_tab(self):
+        _, form_panel, list_panel = two_column_layout(self.content_frame)
+
+        panel_title(form_panel, "Create Tournament")
+
+        self.t_name_entry = form_field(form_panel, "Tournament Name", "e.g. CS2 Spring Open")
+
+        label(form_panel, "Game Discipline", size=12, color=TEXT_MUTED).pack(anchor="w", padx=20, pady=(5, 2))
+        self.t_game_menu = option_menu(form_panel, ["Counter-Strike 2", "Dota 2"])
+        self.t_game_menu.pack(fill="x", padx=20, pady=(0, 10))
+
+        label(form_panel, "Max Teams", size=12, color=TEXT_MUTED).pack(anchor="w", padx=20, pady=(5, 2))
+        self.t_teams_menu = option_menu(form_panel, ["8", "16"])
+        self.t_teams_menu.pack(fill="x", padx=20, pady=(0, 10))
+
+        label(form_panel, "Start Date", size=12, color=TEXT_MUTED).pack(anchor="w", padx=20, pady=(5, 2))
+        self.t_date_entry = ctk.CTkEntry(form_panel, placeholder_text="YYYY-MM-DD", height=35)
+        default_date = (datetime.date.today() + datetime.timedelta(days=7)).strftime("%Y-%m-%d")
+        self.t_date_entry.insert(0, default_date)
+        self.t_date_entry.pack(fill="x", padx=20, pady=(0, 10))
+
+        label(form_panel, "Select Teams", size=12, color=TEXT_MUTED).pack(anchor="w", padx=20, pady=(5, 2))
+        teams_scroll = ctk.CTkScrollableFrame(form_panel, fg_color=BG_ROW, height=120, border_width=1, border_color=BORDER)
+        teams_scroll.pack(fill="x", padx=20, pady=(0, 20))
+
+        self.team_checkboxes = {}
+        for t in self.teams:
+            var = ctk.StringVar(value="off")
+            cb = ctk.CTkCheckBox(teams_scroll, text=t["name"], variable=var, onvalue="on", offvalue="off",
+                                  fg_color=COLOR_PRIMARY, text_color=TEXT_PRIMARY, font=F(12))
+            cb.pack(anchor="w", pady=4, padx=5)
+            self.team_checkboxes[t["name"]] = var
+
+        self.t_error_lbl = error_label(form_panel)
+        self.t_error_lbl.pack(pady=(0, 5))
+
+        button(form_panel, "Create Tournament", self.create_tournament_event,
+               hover="#2E6299", height=40).pack(fill="x", padx=20, pady=(0, 20))
+
+        self.tournaments_scroll = scroll_list(list_panel, "Active Tournaments")
+        self.refresh_tournaments_list()
+
