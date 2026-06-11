@@ -42,3 +42,52 @@ def row_frame(parent, **kw):
     return ctk.CTkFrame(parent, **kw)
 
 
+def button(parent, text, command, color=COLOR_PRIMARY, hover=None, height=32,
+           corner_radius=8, **kw):
+    return ctk.CTkButton(
+        parent, text=text, command=command, fg_color=color,
+        hover_color=hover or color, height=height, corner_radius=corner_radius,
+        font=F(11), **kw
+    )
+
+
+def outline_button(parent, text, command, border_color=COLOR_DANGER,
+                    text_color=TEXT_DANGER, hover=None, **kw):
+    kw.setdefault("height", 25)
+    kw.setdefault("width", 60)
+    kw.setdefault("corner_radius", 6)
+    return ctk.CTkButton(
+        parent, text=text, command=command, fg_color="transparent",
+        border_width=1, border_color=border_color, text_color=text_color,
+        hover_color=hover or "#3A1C1C", font=F(10), **kw
+    )
+
+
+def badge(parent, text, color, **kw):
+    return ctk.CTkLabel(
+        parent, text=f"  {text.upper()}  ", font=F(10, bold=True),
+        text_color=TEXT_PRIMARY, fg_color=color, corner_radius=6, height=22, **kw
+    )
+
+
+def option_menu(parent, values, **kw):
+    kw.setdefault("height", 35)
+    kw.setdefault("fg_color", "#2A2A38")
+    kw.setdefault("button_color", "#3A3A4D")
+    return ctk.CTkOptionMenu(parent, values=values, **kw)
+
+
+def form_field(parent, text, placeholder, height=35):
+    """Label + Entry pair used in 'add new item' forms. Returns the Entry."""
+    label(parent, text, size=12, color=TEXT_MUTED).pack(anchor="w", padx=20, pady=(5, 2))
+    entry = ctk.CTkEntry(parent, placeholder_text=placeholder, height=height)
+    entry.pack(fill="x", padx=20, pady=(0, 10))
+    return entry
+
+
+def panel_title(parent, text, **pad):
+    pad.setdefault("padx", 20)
+    pad.setdefault("pady", (20, 15))
+    label(parent, text, size=16, bold=True).pack(anchor="w", **pad)
+
+
