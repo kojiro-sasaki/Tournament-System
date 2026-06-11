@@ -319,3 +319,51 @@ class TeamWindow(ctk.CTkFrame):
         self.refresh_tournaments_list()
         self.refresh_matches_list()
 
+    def refresh_tournaments_list(self):
+        for widget in self.t_scroll.winfo_children():
+            widget.destroy()
+
+        for t in self.tournaments:
+            card = ctk.CTkFrame(self.t_scroll, fg_color="#181820", corner_radius=8, border_width=1, border_color="#2A2A35")
+            card.pack(fill="x", pady=5, padx=5)
+
+            details = ctk.CTkFrame(card, fg_color="transparent")
+            details.pack(fill="x", padx=15, pady=(10, 5))
+
+            # Bind clicking on card to view match schedule
+            card.bind("<Button-1>", lambda event, tid=t["id"]: self.select_tournament(tid))
+            details.bind("<Button-1>", lambda event, tid=t["id"]: self.select_tournament(tid))
+
+            name = ctk.CTkLabel(details, text=t["name"], font=("Roboto", 13, "bold"), text_color=TEXT_PRIMARY, anchor="w")
+            name.pack(fill="x")
+
+            game = ctk.CTkLabel(details, text=f"{t['game']} • Date: {t['date']}", font=("Roboto", 11), text_color=TEXT_MUTED, anchor="w")
+            game.pack(fill="x")
+
+            status_color = COLOR_WARNING if t["status"] == "Draft" else (COLOR_PRIMARY if t["status"] == "Registration Open" else (COLOR_SUCCESS if t["status"] == "In Progress" else COLOR_DANGER))
+            badge = ctk.CTkLabel(card, text=f"  {t['status'].upper()}  ", font=("Roboto", 9, "bold"), text_color=TEXT_PRIMARY, fg_color=status_color, corner_radius=6, height=18)
+            badge.pack(side="left", padx=15, pady=(0, 10))
+
+            # Sign Up Button
+            if t["status"] == "Registration Open":
+                if t["id"] in self.registered_tournaments:
+                    signed_lbl = ctk.CTkLabel(card, text="Registered ✔", font=("Roboto", 11, "bold"), text_color=COLOR_SUCCESS)
+                    signed_lbl.pack(side="right", padx=15, pady=(0, 10))
+                else:
+                    sign_btn = ctk.CTkButton(
+                        card, 
+                        text="Sign Up", 
+                        font=("Roboto", 10, "bold"), 
+                        height=22, 
+                        width=65, 
+                        fg_color=COLOR_PRIMARY, 
+                        hover_color="#2E6299", 
+                        corner_radius=6,
+                        command=lambda tid=t["id"]: self.signup_for_tournament(tid)
+                    )
+                    sign_btn.pack(side="right", padx=15, pady=(0, 10))
+
+    def select_tournament(self, tournament_id):
+        self.selected_tournament_id = tournament_id
+        self.refresh_matches_list()
+
