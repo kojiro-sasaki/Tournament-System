@@ -414,3 +414,55 @@ class TeamWindow(ctk.CTkFrame):
             score_text = f" {m['score1']} - {m['score2']} " if m["status"] in ["Finished", "In Progress"] else " VS "
             ctk.CTkLabel(teams, text=score_text, font=("Roboto", 12, "bold"), text_color=COLOR_PRIMARY).grid(row=0, column=1)
             
+            ctk.CTkLabel(teams, text=m["team2"], font=("Roboto", 11, "bold"), text_color=TEXT_PRIMARY, anchor="w").grid(row=0, column=2, sticky="ew", padx=5)
+
+            status_color = COLOR_SUCCESS if m["status"] == "Finished" else (COLOR_PRIMARY if m["status"] == "In Progress" else TEXT_MUTED)
+            status_badge = ctk.CTkLabel(row, text=m["status"].upper(), font=("Roboto", 9, "bold"), text_color=status_color)
+            status_badge.pack(side="right", padx=10)
+
+    def show_bracket_tab(self):
+        tab_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        tab_frame.pack(fill="both", expand=True)
+
+        header = ctk.CTkLabel(tab_frame, text="Tournament Playoff Bracket (Read Only)", font=("Roboto", 16, "bold"), text_color=TEXT_PRIMARY)
+        header.pack(anchor="w", pady=(0, 10))
+
+        t_options = {t["name"]: t["id"] for t in self.tournaments}
+        t_names = list(t_options.keys())
+        current_name = next((k for k, v in t_options.items() if v == self.selected_tournament_id), "Dota 2 Champions Cup")
+
+        sel_row = ctk.CTkFrame(tab_frame, fg_color="transparent")
+        sel_row.pack(fill="x", pady=(0, 10))
+
+        t_selector = ctk.CTkOptionMenu(
+            sel_row, 
+            values=t_names, 
+            width=220, 
+            height=30,
+            fg_color="#2A2A38", 
+            button_color="#3A3A4D",
+            command=lambda val: self.select_bracket_tournament(t_options[val])
+        )
+        t_selector.set(current_name)
+        t_selector.pack(side="left")
+
+        self.bracket_scroll = ctk.CTkScrollableFrame(tab_frame, fg_color=BG_CARD, corner_radius=10, border_width=1, border_color="#2E2E3A", orientation="both")
+        self.bracket_scroll.pack(fill="both", expand=True)
+
+        self.refresh_bracket_view()
+
+    def select_bracket_tournament(self, tournament_id):
+        self.selected_tournament_id = tournament_id
+        self.refresh_bracket_view()
+
+    def refresh_bracket_view(self):
+        for widget in self.bracket_scroll.winfo_children():
+            widget.destroy()
+
+        t_matches = [m for m in self.matches if m["tournament_id"] == self.selected_tournament_id]
+
+        if not t_matches or len(t_matches) < 7:
+            no_lbl = ctk.CTkLabel(self.bracket_scroll, text="A standard 8-team bracket is only available for 'Dota 2 Champions Cup' currently.", font=("Roboto", 14), text_color=TEXT_MUTED)
+            no_lbl.pack(pady=40)
+            return
+
