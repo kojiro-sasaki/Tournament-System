@@ -293,3 +293,87 @@ class AdminWindow(ctk.CTkFrame):
                 break
         self.refresh_tournaments_list()
 
+    def delete_tournament(self, tournament_id):
+        for t in self.tournaments:
+            if t["id"] == tournament_id:
+                # TODO: INSERT INTO activities (message) VALUES (...)
+                self.activities.append(f"Tournament '{t['name']}' was deleted")
+                # TODO: DELETE FROM tournaments WHERE id = tournament_id
+                self.tournaments.remove(t)
+                break
+        self.refresh_tournaments_list()
+
+    # ------------------------------------------------------------------
+    # Matches tab
+    # ------------------------------------------------------------------
+    def show_matches_tab(self):
+        tab_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        tab_frame.pack(fill="both", expand=True)
+
+        top_row = ctk.CTkFrame(tab_frame, fg_color="transparent")
+        top_row.pack(fill="x", pady=(0, 15))
+
+        label(top_row, "Manage Matches for:", size=16, bold=True).pack(side="left", padx=(0, 10))
+
+        t_options = {t["name"]: t["id"] for t in self.tournaments}
+        t_names = list(t_options.keys())
+        current_name = next((k for k, v in t_options.items() if v == self.selected_tournament_id),
+                             "Dota 2 Champions Cup")
+
+        t_selector = option_menu(top_row, t_names, width=250,
+                                  command=lambda val: self.select_matches_tournament(t_options[val]))
+        t_selector.set(current_name)
+        t_selector.pack(side="left")
+
+        matches_panel = card(tab_frame)
+        matches_panel.pack(fill="both", expand=True)
+
+        self.matches_scroll = ctk.CTkScrollableFrame(matches_panel, fg_color="transparent")
+        self.matches_scroll.pack(fill="both", expand=True, padx=15, pady=15)
+
+        self.refresh_matches_list()
+
+    def select_matches_tournament(self, tournament_id):
+        self.selected_tournament_id = tournament_id
+        self.refresh_matches_list()
+
+    def refresh_matches_list(self):
+        clear(self.matches_scroll)
+
+        t_matches = [m for m in self.matches if m["tournament_id"] == self.selected_tournament_id]
+
+        if not t_matches:
+            label(self.matches_scroll, "No matches generated for this tournament.",
+                  size=14, color=TEXT_MUTED).pack(pady=30)
+            return
+
+        for m in t_matches:
+            row = row_frame(self.matches_scroll)
+            row.pack(fill="x", pady=5, padx=5)
+
+            info_frame = ctk.CTkFrame(row, fg_color="transparent")
+            info_frame.pack(side="left", padx=15, pady=12)
+            label(info_frame, m["round"], size=12, bold=True, color=COLOR_PRIMARY, anchor="w").pack(fill="x")
+            label(info_frame, f"Time: {m['time']}", size=11, color=TEXT_MUTED, anchor="w").pack(fill="x")
+
+            teams_frame = ctk.CTkFrame(row, fg_color="transparent")
+            teams_frame.pack(side="left", expand=True, fill="both", padx=10)
+            teams_frame.grid_columnconfigure(0, weight=1)
+            teams_frame.grid_columnconfigure(1, weight=0)
+            teams_frame.grid_columnconfigure(2, weight=1)
+            teams_frame.grid_rowconfigure(0, weight=1)
+
+            label(teams_frame, m["team1"], size=13, bold=True, anchor="e").grid(row=0, column=0, sticky="ew", padx=10)
+
+            vs_text = f" {m['score1']} - {m['score2']} " if m["status"] in ("Finished", "In Progress") else "   VS   "
+            label(teams_frame, vs_text, size=14, bold=True, color=COLOR_PRIMARY).grid(row=0, column=1)
+
+            label(teams_frame, m["team2"], size=13, bold=True, anchor="w").grid(row=0, column=2, sticky="ew", padx=10)
+
+            right_frame = ctk.CTkFrame(row, fg_color="transparent")
+            right_frame.pack(side="right", padx=15, pady=12)
+
+            badge(right_frame, m["status"], status_color(m["status"])).pack(side="left", padx=15)
+            button(right_frame, "Edit Score", lambda match_obj=m: self.open_score_dialog(match_obj),
+                   color="#34495E", hover="#2C3E50", height=28, width=85, corner_radius=6).pack(side="left")
+
