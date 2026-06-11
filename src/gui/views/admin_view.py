@@ -377,3 +377,109 @@ class AdminWindow(ctk.CTkFrame):
             button(right_frame, "Edit Score", lambda match_obj=m: self.open_score_dialog(match_obj),
                    color="#34495E", hover="#2C3E50", height=28, width=85, corner_radius=6).pack(side="left")
 
+    def open_score_dialog(self, match):
+        self.dialog_overlay = ctk.CTkFrame(self.content_frame, fg_color="#0A0A0F")
+        self.dialog_overlay.place(relx=0, rely=0, relwidth=1, relheight=1)
+
+        dialog = ctk.CTkFrame(self.dialog_overlay, fg_color=BG_CARD, corner_radius=12, border_width=1,
+                               border_color="#3E3E52", width=400, height=280)
+        dialog.place(relx=0.5, rely=0.5, anchor="center")
+        dialog.pack_propagate(False)
+
+        label(dialog, f"Update Score - {match['round']}", size=16, bold=True).pack(pady=(15, 10))
+
+        body = ctk.CTkFrame(dialog, fg_color="transparent")
+        body.pack(fill="x", padx=30, pady=10)
+        body.grid_columnconfigure((0, 2), weight=4)
+        body.grid_columnconfigure(1, weight=2)
+
+        label(body, match["team1"], size=12, bold=True, wraplength=120).grid(row=0, column=0, pady=(0, 5))
+        self.s1_entry = ctk.CTkEntry(body, placeholder_text="0", width=60, height=35, justify="center")
+        self.s1_entry.insert(0, str(match["score1"]))
+        self.s1_entry.grid(row=1, column=0)
+
+        label(body, ":", size=24, bold=True, color=TEXT_MUTED).grid(row=1, column=1)
+
+        label(body, match["team2"], size=12, bold=True, wraplength=120).grid(row=0, column=2, pady=(0, 5))
+        self.s2_entry = ctk.CTkEntry(body, placeholder_text="0", width=60, height=35, justify="center")
+        self.s2_entry.insert(0, str(match["score2"]))
+        self.s2_entry.grid(row=1, column=2)
+
+        status_row = ctk.CTkFrame(dialog, fg_color="transparent")
+        status_row.pack(fill="x", padx=30, pady=(10, 15))
+        label(status_row, "Match Status: ", size=12, color=TEXT_MUTED).pack(side="left")
+
+        self.m_status_menu = option_menu(status_row, ["Scheduled", "In Progress", "Finished"], height=28)
+        self.m_status_menu.set(match["status"])
+        self.m_status_menu.pack(side="left", fill="x", expand=True, padx=(5, 0))
+
+        footer = ctk.CTkFrame(dialog, fg_color="transparent")
+        footer.pack(fill="x", side="bottom", pady=15, padx=30)
+
+        ctk.CTkButton(footer, text="Cancel", fg_color="transparent", border_width=1, border_color="#555566",
+                       hover_color="#2C2C35", height=32, corner_radius=6,
+                       command=self.close_score_dialog).pack(side="left", fill="x", expand=True, padx=(0, 5))
+
+        button(footer, "Save Results", lambda m_obj=match: self.save_score_event(m_obj),
+               hover="#2E6299", height=32).pack(side="right", fill="x", expand=True, padx=(5, 0))
+
+    def close_score_dialog(self):
+        if hasattr(self, "dialog_overlay") and self.dialog_overlay:
+            self.dialog_overlay.destroy()
+            self.dialog_overlay = None
+
+    def save_score_event(self, match):
+        s1_str = self.s1_entry.get().strip()
+        s2_str = self.s2_entry.get().strip()
+        new_status = self.m_status_menu.get()
+
+        try:
+            score1 = int(s1_str) if s1_str else 0
+            score2 = int(s2_str) if s2_str else 0
+        except ValueError:
+            self.s1_entry.configure(border_color=COLOR_DANGER)
+            self.s2_entry.configure(border_color=COLOR_DANGER)
+            return
+
+        match["score1"] = score1
+        match["score2"] = score2
+        match["status"] = new_status
+
+        if new_status == "Finished":
+            # TODO: INSERT INTO activities (message) VALUES (...)
+            self.activities.append(f"Match {match['team1']} vs {match['team2']} finished with score {score1}:{score2}")
+            self.update_bracket_flow(match)
+        else:
+            # TODO: INSERT INTO activities (message) VALUES (...)
+            self.activities.append(f"Match {match['team1']} vs {match['team2']} updated to '{new_status}'")
+
+        # TODO: UPDATE matches SET score1 = score1, score2 = score2, status = new_status WHERE id = match['id']
+
+        self.close_score_dialog()
+
+        if self.current_tab == "Matches":
+            self.refresh_matches_list()
+        elif self.current_tab == "Bracket":
+            self.refresh_bracket_view()
+
+    def update_bracket_flow(self, match):
+        t_id = match["tournament_id"]
+        t_matches = [m for m in self.matches if m["tournament_id"] == t_id]
+        if len(t_matches) not in (7, 15):
+            return
+
+        winner = match["team1"] if match["score1"] > match["score2"] else match["team2"]
+        try:
+            m_idx = t_matches.index(match)
+        except ValueError:
+            return
+
+        next_idx = get_next_match_index(m_idx, len(t_matches))
+        if next_idx < len(t_matches):
+            team_key = "team1" if m_idx % 2 == 0 else "team2"
+            # TODO: UPDATE matches SET {team_key} = winner WHERE id = t_matches[next_idx]['id']
+            t_matches[next_idx][team_key] = winner
+
+    # ------------------------------------------------------------------
+    # Bracket tab
+    # ------------------------------------------------------------------
