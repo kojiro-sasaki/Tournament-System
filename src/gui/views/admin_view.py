@@ -483,3 +483,93 @@ class AdminWindow(ctk.CTkFrame):
     # ------------------------------------------------------------------
     # Bracket tab
     # ------------------------------------------------------------------
+    def show_bracket_tab(self):
+        tab_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        tab_frame.pack(fill="both", expand=True)
+
+        label(tab_frame, "Interactive Playoff Bracket (Single Elimination)", size=16, bold=True).pack(anchor="w", pady=(0, 15))
+
+        t_options = {t["name"]: t["id"] for t in self.tournaments}
+        t_names = list(t_options.keys())
+        current_name = next((k for k, v in t_options.items() if v == self.selected_tournament_id),
+                             t_names[0] if t_names else "")
+
+        sel_row = ctk.CTkFrame(tab_frame, fg_color="transparent")
+        sel_row.pack(fill="x", pady=(0, 10))
+
+        t_selector = option_menu(sel_row, t_names, width=220, height=30,
+                                  command=lambda val: self.select_bracket_tournament(t_options[val]))
+        t_selector.set(current_name)
+        t_selector.pack(side="left")
+
+        canvas_container = card(tab_frame)
+        canvas_container.pack(fill="both", expand=True)
+
+        h_scroll = tk.Scrollbar(canvas_container, orient="horizontal")
+        h_scroll.pack(side="bottom", fill="x")
+        v_scroll = tk.Scrollbar(canvas_container, orient="vertical")
+        v_scroll.pack(side="right", fill="y")
+
+        self.bracket_canvas = tk.Canvas(
+            canvas_container, bg=BG_CARD, highlightthickness=0,
+            xscrollcommand=h_scroll.set, yscrollcommand=v_scroll.set
+        )
+        self.bracket_canvas.pack(side="left", fill="both", expand=True)
+
+        h_scroll.config(command=self.bracket_canvas.xview)
+        v_scroll.config(command=self.bracket_canvas.yview)
+
+        self.bracket_canvas.bind("<MouseWheel>", lambda e: self.bracket_canvas.yview_scroll(int(-1 * (e.delta / 120)), "units"))
+        self.bracket_canvas.bind("<Shift-MouseWheel>", lambda e: self.bracket_canvas.xview_scroll(int(-1 * (e.delta / 120)), "units"))
+
+        self.refresh_bracket_view()
+
+    def select_bracket_tournament(self, tournament_id):
+        self.selected_tournament_id = tournament_id
+        self.refresh_bracket_view()
+
+    def _draw_bracket_lines(self, canvas, positions, card_w, card_h, num_teams):
+        LINE_COLOR = "#3A5A7A"
+        LINE_WIDTH = 2
+
+        def mid_right(x, y):
+            return x + card_w, y + card_h // 2
+
+        def mid_left(x, y):
+            return x, y + card_h // 2
+
+        def draw_connector(x1, y1, x2, y2):
+            mid_x = (x1 + x2) // 2
+            canvas.create_line(x1, y1, mid_x, y1, fill=LINE_COLOR, width=LINE_WIDTH)
+            canvas.create_line(mid_x, y1, mid_x, y2, fill=LINE_COLOR, width=LINE_WIDTH)
+            canvas.create_line(mid_x, y2, x2, y2, fill=LINE_COLOR, width=LINE_WIDTH)
+
+        if num_teams == 16:
+            for i in range(4):
+                rx0, ry0 = mid_right(*positions[f"ro16_{i*2}"])
+                rx1, ry1 = mid_right(*positions[f"ro16_{i*2+1}"])
+                lx_qf, ly_qf = mid_left(*positions[f"qf{i}"])
+                draw_connector(rx0, ry0, lx_qf, ly_qf)
+
+        rx0, ry0 = mid_right(*positions["qf0"])
+        rx1, ry1 = mid_right(*positions["qf1"])
+        lx4, ly4 = mid_left(*positions["sf0"])
+        draw_connector(rx0, ry0, lx4, ly4)
+        draw_connector(rx1, ry1, lx4, ly4)
+
+        rx2, ry2 = mid_right(*positions["qf2"])
+        rx3, ry3 = mid_right(*positions["qf3"])
+        lx5, ly5 = mid_left(*positions["sf1"])
+        draw_connector(rx2, ry2, lx5, ly5)
+        draw_connector(rx3, ry3, lx5, ly5)
+
+        rx4, ry4 = mid_right(*positions["sf0"])
+        rx5, ry5 = mid_right(*positions["sf1"])
+        lx6, ly6 = mid_left(*positions["final"])
+        draw_connector(rx4, ry4, lx6, ly6)
+        draw_connector(rx5, ry5, lx6, ly6)
+
+        rx6, ry6 = mid_right(*positions["final"])
+        lx7, ly7 = mid_left(*positions["champion"])
+        draw_connector(rx6, ry6, lx7, ly7)
+
