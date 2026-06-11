@@ -197,3 +197,99 @@ class AdminWindow(ctk.CTkFrame):
         self.tournaments_scroll = scroll_list(list_panel, "Active Tournaments")
         self.refresh_tournaments_list()
 
+    def refresh_tournaments_list(self):
+        clear(self.tournaments_scroll)
+
+        for t in self.tournaments:
+            c = row_frame(self.tournaments_scroll)
+            c.pack(fill="x", pady=6, padx=5)
+
+            details = ctk.CTkFrame(c, fg_color="transparent")
+            details.pack(fill="x", padx=15, pady=10)
+
+            label(details, t["name"], size=14, bold=True, anchor="w").pack(fill="x")
+            label(details, f"{t['game']} • Max Teams: {t['max_teams']} • Date: {t['date']}",
+                  size=11, color=TEXT_MUTED, anchor="w").pack(fill="x")
+
+            status_frame = ctk.CTkFrame(c, fg_color="transparent")
+            status_frame.pack(fill="x", padx=15, pady=(0, 10))
+            badge(status_frame, t["status"], status_color(t["status"])).pack(side="left")
+
+            actions = ctk.CTkFrame(c, fg_color="transparent")
+            actions.pack(fill="x", padx=15, pady=(0, 10))
+
+            next_status = {
+                "Draft": ("Open Registration", "#34495E", "#2C3E50", "Registration Open"),
+                "Registration Open": ("Start Tournament", COLOR_SUCCESS, "#236127", "In Progress"),
+                "In Progress": ("Finish Tournament", COLOR_DANGER, "#A81D1D", "Finished"),
+            }.get(t["status"])
+
+            if next_status:
+                text, color, hover, new_status = next_status
+                button(actions, text, lambda tid=t["id"], s=new_status: self.change_tournament_status(tid, s),
+                       color=color, hover=hover, height=25, width=110, corner_radius=6).pack(side="left", padx=(0, 5))
+
+            outline_button(actions, "Delete", lambda tid=t["id"]: self.delete_tournament(tid)).pack(side="right")
+
+    def create_tournament_event(self):
+        name = self.t_name_entry.get().strip()
+        game = self.t_game_menu.get()
+        max_teams = int(self.t_teams_menu.get())
+        date_str = self.t_date_entry.get().strip()
+
+        self.t_error_lbl.configure(text="")
+
+        if not name:
+            self.t_error_lbl.configure(text="Please enter a tournament name!")
+            return
+
+        try:
+            datetime.datetime.strptime(date_str, "%Y-%m-%d")
+        except ValueError:
+            self.t_error_lbl.configure(text="Invalid date format! Use YYYY-MM-DD")
+            return
+
+        selected_teams = [name_ for name_, var in self.team_checkboxes.items() if var.get() == "on"]
+        if len(selected_teams) != max_teams:
+            self.t_error_lbl.configure(text=f"Please select exactly {max_teams} teams!")
+            return
+
+        new_id = max([t["id"] for t in self.tournaments]) + 1 if self.tournaments else 1
+        new_t = {
+            "id": new_id,
+            "name": name,
+            "game": game,
+            "max_teams": max_teams,
+            "status": "Draft",
+            "registered_teams": len(selected_teams),
+            "date": date_str,
+            "teams": selected_teams,
+        }
+
+        # TODO: INSERT INTO tournaments (id, name, game, max_teams, status, registered_teams, date) VALUES (...)
+        self.tournaments.append(new_t)
+        # TODO: INSERT INTO activities (message) VALUES (...)
+        self.activities.append(f"Tournament '{name}' created successfully as 'Draft'")
+
+        if max_teams in (8, 16):
+            match_id_start = max([m["id"] for m in self.matches]) + 1 if self.matches else 1
+            new_matches = generate_matches(new_id, selected_teams, max_teams, match_id_start)
+            # TODO: INSERT INTO matches (id, tournament_id, round, team1, team2) VALUES (...)
+            self.matches.extend(new_matches)
+
+        self.t_name_entry.delete(0, "end")
+        for var in self.team_checkboxes.values():
+            var.set("off")
+
+        self.refresh_tournaments_list()
+
+    def change_tournament_status(self, tournament_id, new_status):
+        for t in self.tournaments:
+            if t["id"] == tournament_id:
+                # TODO: UPDATE tournaments SET status = new_status WHERE id = tournament_id
+                t["status"] = new_status
+                # TODO: INSERT INTO activities (message) VALUES (...)
+                self.activities.append(f"Tournament '{t['name']}' status changed to '{new_status}'")
+                break
+        self.refresh_tournaments_list()
+
