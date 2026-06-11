@@ -281,3 +281,41 @@ class TeamWindow(ctk.CTkFrame):
             self.edit_dialog.destroy()
             self.edit_dialog = None
 
+    def save_team_changes(self):
+        self.my_team["name"] = self.edit_name.get().strip()
+        self.my_team["region"] = self.edit_region.get().strip()
+        self.my_team["desc"] = self.edit_desc.get().strip()
+        self.close_edit_dialog()
+        self.show_my_team_tab()
+
+    def show_tournaments_tab(self):
+        tab_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        tab_frame.pack(fill="both", expand=True)
+
+        tab_frame.grid_columnconfigure(0, weight=5)
+        tab_frame.grid_columnconfigure(1, weight=5)
+        tab_frame.grid_rowconfigure(0, weight=1)
+
+        # Left list: Available Tournaments
+        left = ctk.CTkFrame(tab_frame, fg_color=BG_CARD, corner_radius=10, border_width=1, border_color="#2E2E3A")
+        left.grid(row=0, column=0, padx=(0, 10), sticky="nsew")
+
+        lbl = ctk.CTkLabel(left, text="Active Tournaments", font=("Roboto", 16, "bold"), text_color=TEXT_PRIMARY)
+        lbl.pack(anchor="w", padx=20, pady=(20, 15))
+
+        self.t_scroll = ctk.CTkScrollableFrame(left, fg_color="transparent")
+        self.t_scroll.pack(fill="both", expand=True, padx=10, pady=(0, 15))
+
+        # Right pane: Matches for chosen tournament
+        right = ctk.CTkFrame(tab_frame, fg_color=BG_CARD, corner_radius=10, border_width=1, border_color="#2E2E3A")
+        right.grid(row=0, column=1, padx=(10, 0), sticky="nsew")
+
+        lbl_matches = ctk.CTkLabel(right, text="Tournament Match Schedule", font=("Roboto", 16, "bold"), text_color=TEXT_PRIMARY)
+        lbl_matches.pack(anchor="w", padx=20, pady=(20, 15))
+
+        self.m_scroll = ctk.CTkScrollableFrame(right, fg_color="transparent")
+        self.m_scroll.pack(fill="both", expand=True, padx=10, pady=(0, 15))
+
+        self.refresh_tournaments_list()
+        self.refresh_matches_list()
+
