@@ -163,3 +163,81 @@ class TeamWindow(ctk.CTkFrame):
         desc_lbl = ctk.CTkLabel(info_panel, text=status_text, font=("Roboto", 14), text_color=TEXT_PRIMARY, justify="left")
         desc_lbl.pack(anchor="w", padx=20, pady=10)
 
+    def show_my_team_tab(self):
+        tab_frame = ctk.CTkScrollableFrame(self.content_frame, fg_color="transparent")
+        tab_frame.pack(fill="both", expand=True)
+
+        if self.my_team is None:
+            # Show Registration Form
+            form_panel = ctk.CTkFrame(tab_frame, fg_color=BG_CARD, corner_radius=10, border_width=1, border_color="#2E2E3A")
+            form_panel.pack(pady=20, padx=20, fill="x")
+
+            form_label = ctk.CTkLabel(form_panel, text="Register Your Team", font=("Roboto", 18, "bold"), text_color=TEXT_PRIMARY)
+            form_label.pack(anchor="w", padx=20, pady=(20, 15))
+
+            ctk.CTkLabel(form_panel, text="Team Name", font=("Roboto", 12), text_color=TEXT_MUTED).pack(anchor="w", padx=20, pady=(5, 2))
+            self.team_name_entry = ctk.CTkEntry(form_panel, placeholder_text="e.g. Natus Vincere", height=35)
+            self.team_name_entry.pack(fill="x", padx=20, pady=(0, 10))
+
+            ctk.CTkLabel(form_panel, text="Team Tag", font=("Roboto", 12), text_color=TEXT_MUTED).pack(anchor="w", padx=20, pady=(5, 2))
+            self.team_tag_entry = ctk.CTkEntry(form_panel, placeholder_text="e.g. NAVI", height=35)
+            self.team_tag_entry.pack(fill="x", padx=20, pady=(0, 10))
+
+            ctk.CTkLabel(form_panel, text="Region", font=("Roboto", 12), text_color=TEXT_MUTED).pack(anchor="w", padx=20, pady=(5, 2))
+            self.team_region_entry = ctk.CTkEntry(form_panel, placeholder_text="e.g. Europe", height=35)
+            self.team_region_entry.pack(fill="x", padx=20, pady=(0, 10))
+
+            ctk.CTkLabel(form_panel, text="Description", font=("Roboto", 12), text_color=TEXT_MUTED).pack(anchor="w", padx=20, pady=(5, 2))
+            self.team_desc_text = ctk.CTkEntry(form_panel, placeholder_text="Brief details about the team...", height=35)
+            self.team_desc_text.pack(fill="x", padx=20, pady=(0, 20))
+
+            self.team_error_lbl = ctk.CTkLabel(form_panel, text="", text_color="#FF4C4C", font=("Roboto", 12))
+            self.team_error_lbl.pack(pady=(0, 5))
+
+            # TODO: Create team profile (INSERT INTO teams)
+            add_btn = ctk.CTkButton(form_panel, text="Create Team Profile", command=self.create_my_team, fg_color=COLOR_PRIMARY, hover_color="#2E6299", height=40, corner_radius=8)
+            add_btn.pack(fill="x", padx=20, pady=(0, 20))
+        else:
+            # Show Team Info Profile
+            profile = ctk.CTkFrame(tab_frame, fg_color=BG_CARD, corner_radius=10, border_width=1, border_color="#2E2E3A")
+            profile.pack(pady=20, padx=20, fill="x")
+
+            lbl = ctk.CTkLabel(profile, text="Team Profile", font=("Roboto", 16, "bold"), text_color=TEXT_PRIMARY)
+            lbl.pack(anchor="w", padx=20, pady=(20, 15))
+
+            name_lbl = ctk.CTkLabel(profile, text=f"{self.my_team['name']} [{self.my_team['tag']}]", font=("Roboto", 18, "bold"), text_color=COLOR_PRIMARY, anchor="w")
+            name_lbl.pack(fill="x", padx=20, pady=(5, 2))
+
+            ctk.CTkLabel(profile, text="Region:", font=("Roboto", 12), text_color=TEXT_MUTED).pack(anchor="w", padx=20, pady=(10, 2))
+            reg_lbl = ctk.CTkLabel(profile, text=self.my_team["region"], font=("Roboto", 14), text_color=TEXT_PRIMARY, anchor="w")
+            reg_lbl.pack(fill="x", padx=20)
+
+            ctk.CTkLabel(profile, text="Description:", font=("Roboto", 12), text_color=TEXT_MUTED).pack(anchor="w", padx=20, pady=(10, 2))
+            desc_lbl = ctk.CTkLabel(profile, text=self.my_team["desc"], font=("Roboto", 13), text_color=TEXT_PRIMARY, anchor="w", justify="left", wraplength=400)
+            desc_lbl.pack(fill="x", padx=20)
+
+            # TODO: Edit team profile (UPDATE teams)
+            edit_btn = ctk.CTkButton(profile, text="Edit Team Info", fg_color="#34495E", hover_color="#2C3E50", height=32, corner_radius=6, command=self.open_edit_team_dialog)
+            edit_btn.pack(padx=20, pady=25, anchor="w")
+
+    def create_my_team(self):
+        name = self.team_name_entry.get().strip()
+        tag = self.team_tag_entry.get().strip()
+        region = self.team_region_entry.get().strip()
+        desc = self.team_desc_text.get().strip()
+
+        self.team_error_lbl.configure(text="")
+
+        if not name or not tag or not region:
+            self.team_error_lbl.configure(text="Please fill in Name, Tag, and Region!")
+            return
+
+        self.my_team = {
+            "name": name,
+            "tag": tag,
+            "region": region,
+            "desc": desc if desc else "No description provided."
+        }
+        self.current_tab = None
+        self.select_tab("My Team")
+
