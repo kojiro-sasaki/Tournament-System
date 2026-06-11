@@ -206,3 +206,55 @@ class TeamWindow(ctk.CTkFrame):
             lbl.pack(anchor="w", padx=20, pady=(20, 15))
 
             name_lbl = ctk.CTkLabel(profile, text=f"{self.my_team['name']} [{self.my_team['tag']}]", font=("Roboto", 18, "bold"), text_color=COLOR_PRIMARY, anchor="w")
+            name_lbl.pack(fill="x", padx=20, pady=(5, 2))
+
+            ctk.CTkLabel(profile, text="Region:", font=("Roboto", 12), text_color=TEXT_MUTED).pack(anchor="w", padx=20, pady=(10, 2))
+            reg_lbl = ctk.CTkLabel(profile, text=self.my_team["region"], font=("Roboto", 14), text_color=TEXT_PRIMARY, anchor="w")
+            reg_lbl.pack(fill="x", padx=20)
+
+            ctk.CTkLabel(profile, text="Description:", font=("Roboto", 12), text_color=TEXT_MUTED).pack(anchor="w", padx=20, pady=(10, 2))
+            desc_lbl = ctk.CTkLabel(profile, text=self.my_team["desc"], font=("Roboto", 13), text_color=TEXT_PRIMARY, anchor="w", justify="left", wraplength=400)
+            desc_lbl.pack(fill="x", padx=20)
+
+            # TODO: Edit team profile (UPDATE teams)
+            edit_btn = ctk.CTkButton(profile, text="Edit Team Info", fg_color="#34495E", hover_color="#2C3E50", height=32, corner_radius=6, command=self.open_edit_team_dialog)
+            edit_btn.pack(padx=20, pady=25, anchor="w")
+
+    def create_my_team(self):
+        name = self.team_name_entry.get().strip()
+        tag = self.team_tag_entry.get().strip()
+        region = self.team_region_entry.get().strip()
+        desc = self.team_desc_text.get().strip()
+
+        self.team_error_lbl.configure(text="")
+
+        if not name or not tag or not region:
+            self.team_error_lbl.configure(text="Please fill in Name, Tag, and Region!")
+            return
+
+        self.my_team = {
+            "name": name,
+            "tag": tag,
+            "region": region,
+            "desc": desc if desc else "No description provided."
+        }
+        self.current_tab = None
+        self.select_tab("My Team")
+
+    def open_edit_team_dialog(self):
+        self.edit_dialog = ctk.CTkFrame(self.content_frame, fg_color="rgba(10, 10, 15, 0.8)")
+        self.edit_dialog.place(relx=0, rely=0, relwidth=1, relheight=1)
+
+        dialog = ctk.CTkFrame(self.edit_dialog, fg_color=BG_CARD, corner_radius=12, border_width=1, border_color="#3E3E52", width=420, height=380)
+        dialog.place(relx=0.5, rely=0.5, anchor="center")
+        dialog.pack_propagate(False)
+
+        title = ctk.CTkLabel(dialog, text="Edit Team Info", font=("Roboto", 16, "bold"), text_color=TEXT_PRIMARY)
+        title.pack(pady=15)
+
+        ctk.CTkLabel(dialog, text="Team Name", font=("Roboto", 12), text_color=TEXT_MUTED).pack(anchor="w", padx=30, pady=(5, 2))
+        self.edit_name = ctk.CTkEntry(dialog, height=35)
+        self.edit_name.insert(0, self.my_team["name"])
+        self.edit_name.pack(fill="x", padx=30)
+
+        ctk.CTkLabel(dialog, text="Region", font=("Roboto", 12), text_color=TEXT_MUTED).pack(anchor="w", padx=30, pady=(5, 2))
