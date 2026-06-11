@@ -50,3 +50,55 @@ class TeamWindow(ctk.CTkFrame):
 
         self.sidebar_frame = None
         self.sidebar_buttons = {}
+        self.create_sidebar()
+
+        self.content_frame = ctk.CTkFrame(self, fg_color=BG_MAIN, corner_radius=0)
+        self.content_frame.grid(row=0, column=1, sticky="nsew", padx=20, pady=20)
+        self.content_frame.grid_rowconfigure(0, weight=1)
+        self.content_frame.grid_columnconfigure(0, weight=1)
+
+        self.current_tab = None
+        self.select_tab("Dashboard")
+
+    def create_sidebar(self):
+        self.sidebar_frame = ctk.CTkFrame(self, fg_color=BG_SIDEBAR, width=220, corner_radius=0)
+        self.sidebar_frame.grid(row=0, column=0, sticky="nsew")
+        self.sidebar_frame.grid_rowconfigure(5, weight=1)
+
+        brand_label = ctk.CTkLabel(
+            self.sidebar_frame, 
+            text="Tournament System", 
+            font=("Roboto", 18, "bold"), 
+            text_color=TEXT_PRIMARY
+        )
+        brand_label.grid(row=0, column=0, padx=20, pady=(25, 5), sticky="w")
+
+        role_label = ctk.CTkLabel(
+            self.sidebar_frame, 
+            text="TEAM MANAGER PANEL", 
+            font=("Roboto", 11, "bold"), 
+            text_color=COLOR_PRIMARY
+        )
+        role_label.grid(row=1, column=0, padx=20, pady=(0, 25), sticky="w")
+
+        tabs = [
+            ("Dashboard", "🏠  Dashboard"),
+            ("My Team", "👥  My Team"),
+            ("Tournaments", "🏆  Tournaments"),
+            ("Bracket", "📊  Bracket")
+        ]
+
+        for idx, (tab_name, display_text) in enumerate(tabs):
+            btn = ctk.CTkButton(
+                self.sidebar_frame,
+                text=display_text,
+                anchor="w",
+                font=("Roboto", 13),
+                height=40,
+                fg_color="transparent",
+                text_color=TEXT_PRIMARY,
+                hover_color="#272738",
+                corner_radius=8,
+                command=lambda name=tab_name: self.select_tab(name)
+            )
+            btn.grid(row=idx + 2, column=0, padx=10, pady=4, sticky="ew")
