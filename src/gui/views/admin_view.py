@@ -573,3 +573,210 @@ class AdminWindow(ctk.CTkFrame):
         lx7, ly7 = mid_left(*positions["champion"])
         draw_connector(rx6, ry6, lx7, ly7)
 
+    def refresh_bracket_view(self):
+        if not hasattr(self, "bracket_canvas") or not self.bracket_canvas.winfo_exists():
+            return
+
+        self.bracket_canvas.delete("all")
+
+        t_matches = [m for m in self.matches if m["tournament_id"] == self.selected_tournament_id]
+
+        if not t_matches or len(t_matches) not in (7, 15):
+            self.bracket_canvas.create_text(
+                300, 80,
+                text="A standard bracket requires 7 (8-team) or 15 (16-team) matches.",
+                fill=TEXT_MUTED, font=("Roboto", 13)
+            )
+            self.bracket_canvas.configure(scrollregion=(0, 0, 600, 160))
+            return
+
+        num_teams = 16 if len(t_matches) == 15 else 8
+
+        PAD_X, PAD_Y = 30, 30
+        CARD_W, CARD_H = 220, 100
+        COL_GAP, ROW_GAP = 60, 20
+
+        num_rounds = 5 if num_teams == 16 else 4
+        col_x = [PAD_X + i * (CARD_W + COL_GAP) for i in range(num_rounds)]
+
+        positions = {}
+
+        if num_teams == 16:
+            ro16_y_step = CARD_H + ROW_GAP
+            ro16_ys = [PAD_Y + i * ro16_y_step for i in range(8)]
+            for i in range(8):
+                positions[f"ro16_{i}"] = (col_x[0], ro16_ys[i])
+
+            qf_ys = [(ro16_ys[i * 2] + ro16_ys[i * 2 + 1]) / 2 for i in range(4)]
+            for i in range(4):
+                positions[f"qf{i}"] = (col_x[1], qf_ys[i])
+
+            sf_ys = [(qf_ys[0] + qf_ys[1]) / 2, (qf_ys[2] + qf_ys[3]) / 2]
+            positions["sf0"] = (col_x[2], sf_ys[0])
+            positions["sf1"] = (col_x[2], sf_ys[1])
+
+            final_y = (sf_ys[0] + sf_ys[1]) / 2
+            positions["final"] = (col_x[3], final_y)
+            positions["champion"] = (col_x[4], final_y)
+        else:
+            qf_y_step = CARD_H + ROW_GAP * 4
+            qf_ys = [PAD_Y + i * qf_y_step for i in range(4)]
+            for i in range(4):
+                positions[f"qf{i}"] = (col_x[0], qf_ys[i])
+
+            sf_ys = [(qf_ys[0] + qf_ys[1]) / 2, (qf_ys[2] + qf_ys[3]) / 2]
+            positions["sf0"] = (col_x[1], sf_ys[0])
+            positions["sf1"] = (col_x[1], sf_ys[1])
+
+            final_y = (sf_ys[0] + sf_ys[1]) / 2
+            positions["final"] = (col_x[2], final_y)
+            positions["champion"] = (col_x[3], final_y)
+
+        self._draw_bracket_lines(self.bracket_canvas, positions, CARD_W, CARD_H, num_teams)
+
+        def place_card(match, pos_name):
+            px, py = positions[pos_name]
+            frame = self._make_canvas_match_card(match, CARD_W, CARD_H)
+            self.bracket_canvas.create_window(px, py, window=frame, anchor="nw")
+
+        if num_teams == 16:
+            for i in range(8):
+                place_card(t_matches[i], f"ro16_{i}")
+            for i in range(4):
+                place_card(t_matches[8 + i], f"qf{i}")
+            for i in range(2):
+                place_card(t_matches[12 + i], f"sf{i}")
+            place_card(t_matches[14], "final")
+            finals = t_matches[14]
+        else:
+            for i in range(4):
+                place_card(t_matches[i], f"qf{i}")
+            for i in range(2):
+                place_card(t_matches[4 + i], f"sf{i}")
+            place_card(t_matches[6], "final")
+            finals = t_matches[6]
+
+        winner_name = "TBD"
+        if finals["status"] == "Finished":
+            winner_name = finals["team1"] if finals["score1"] > finals["score2"] else finals["team2"]
+        champ_frame = self._make_champion_card(winner_name, CARD_W, CARD_H)
+        cx, cy = positions["champion"]
+        self.bracket_canvas.create_window(cx, cy, window=champ_frame, anchor="nw")
+
+        total_w = cx + CARD_W + PAD_X
+        if num_teams == 16:
+            total_h = max(ro16_ys[7] + CARD_H, cy + CARD_H) + PAD_Y
+        else:
+            total_h = max(qf_ys[3] + CARD_H, cy + CARD_H) + PAD_Y
+        self.bracket_canvas.configure(scrollregion=(0, 0, total_w, total_h))
+
+    def set_winner(self, match, winner_index):
+        if winner_index == 1:
+            match["score1"], match["score2"] = 1, 0
+        else:
+            match["score1"], match["score2"] = 0, 1
+
+        # TODO: UPDATE matches SET score1 = match['score1'], score2 = match['score2'], status = 'Finished' WHERE id = match['id']
+        match["status"] = "Finished"
+        self.update_bracket_flow(match)
+        self.refresh_bracket_view()
+
+    def reset_match(self, match):
+        """Reset a finished match back to Scheduled so the winner can be changed."""
+        # TODO: UPDATE matches SET score1 = 0, score2 = 0, status = 'Scheduled' WHERE id = match['id']
+        match["score1"] = 0
+        match["score2"] = 0
+        match["status"] = "Scheduled"
+
+        t_matches = [m for m in self.matches if m["tournament_id"] == match["tournament_id"]]
+        if len(t_matches) not in (7, 15):
+            self.refresh_bracket_view()
+            return
+
+        try:
+            current = t_matches.index(match)
+        except ValueError:
+            self.refresh_bracket_view()
+            return
+
+        while True:
+            next_idx = get_next_match_index(current, len(t_matches))
+            if next_idx >= len(t_matches):
+                break
+            team_key = "team1" if current % 2 == 0 else "team2"
+            score_key = "score1" if current % 2 == 0 else "score2"
+            # TODO: UPDATE matches SET {team_key} = 'TBD', {score_key} = 0, status = 'Scheduled' WHERE id = t_matches[next_idx]['id']
+            t_matches[next_idx][team_key] = "TBD"
+            t_matches[next_idx][score_key] = 0
+            t_matches[next_idx]["status"] = "Scheduled"
+            current = next_idx
+
+        self.refresh_bracket_view()
+
+    def _make_canvas_match_card(self, match, w, h):
+        """Build a match card widget to be placed on the canvas via create_window."""
+        finished = match["status"] == "Finished"
+        border_color = COLOR_SUCCESS if finished else "#5A2E8A"
+
+        card_frame = ctk.CTkFrame(
+            self.bracket_canvas, fg_color="#13131A", corner_radius=6,
+            border_width=2, border_color=border_color, width=w, height=h
+        )
+        card_frame.pack_propagate(False)
+        card_frame.grid_propagate(False)
+
+        label(card_frame, match["round"], size=9, color=TEXT_MUTED).pack(anchor="w", padx=8, pady=(4, 0))
+
+        teams_frame = ctk.CTkFrame(card_frame, fg_color="transparent")
+        teams_frame.pack(fill="both", expand=True, padx=6, pady=(0, 4))
+
+        def team_row(parent, team_key, score_key, opponent_score_key, allow_reset):
+            row = ctk.CTkFrame(parent, fg_color="transparent")
+            row.pack(fill="x", pady=1)
+
+            if finished:
+                is_winner = match[score_key] > match[opponent_score_key]
+                color = TEXT_PRIMARY if is_winner else TEXT_MUTED
+                prefix = "✓ " if is_winner else "   "
+                label(row, prefix + match[team_key], size=11, bold=is_winner, color=color, anchor="w").pack(
+                    side="left", fill="x", expand=True)
+
+                if allow_reset:
+                    ctk.CTkButton(
+                        row, text="↺", width=22, height=22, font=F(13),
+                        fg_color="transparent", border_width=1, border_color="#555566",
+                        text_color=TEXT_MUTED, hover_color="#2A2A38", corner_radius=4,
+                        command=lambda m=match: self.reset_match(m)
+                    ).pack(side="right")
+                return None, None
+            else:
+                var = ctk.StringVar(value="off")
+                cb = ctk.CTkCheckBox(
+                    row, text=match[team_key], variable=var, onvalue="on", offvalue="off",
+                    fg_color=COLOR_PRIMARY, font=F(11), text_color=TEXT_PRIMARY, width=16, height=16
+                )
+                cb.pack(anchor="w")
+                return var, cb
+
+        if finished:
+            team_row(teams_frame, "team1", "score1", "score2", allow_reset=False)
+            team_row(teams_frame, "team2", "score2", "score1", allow_reset=True)
+        else:
+            cb1_var, cb1 = team_row(teams_frame, "team1", "score1", "score2", allow_reset=False)
+            cb2_var, cb2 = team_row(teams_frame, "team2", "score2", "score1", allow_reset=False)
+
+            def on_cb1():
+                if cb1_var.get() == "on":
+                    cb2_var.set("off")
+                    self.set_winner(match, 1)
+
+            def on_cb2():
+                if cb2_var.get() == "on":
+                    cb1_var.set("off")
+                    self.set_winner(match, 2)
+
+            cb1.configure(command=on_cb1)
+            cb2.configure(command=on_cb2)
+
+        return card_frame
+
