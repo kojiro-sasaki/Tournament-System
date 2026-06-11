@@ -11,7 +11,7 @@ class MatchRepository:
     def get_all():
         return(
             supabase
-            .table('mathces')
+            .table('matches')
             .select(MatchRepository.MATCH_FIELDS)
             .execute()
         )
@@ -21,7 +21,7 @@ class MatchRepository:
     def get_by_id(match_id: int):
         return(
             supabase
-            .table('mathces')
+            .table('matches')
             .select(MatchRepository.MATCH_FIELDS)
             .eq('id', match_id)
             .single()
@@ -33,7 +33,7 @@ class MatchRepository:
     def get_by_tournament_id(tournament_id: int):
         return(
             supabase
-            .table('mathces')
+            .table('matches')
             .select(MatchRepository.MATCH_FIELDS)
             .eq('tournament_id', tournament_id)
             .execute()
@@ -44,7 +44,7 @@ class MatchRepository:
     def get_by_status(status: str):
         return(
             supabase
-            .table('mathces')
+            .table('matches')
             .select(MatchRepository.MATCH_FIELDS)
             .eq('status', status)
             .execute()
@@ -55,7 +55,7 @@ class MatchRepository:
     def create(data: dict):
         return(
             supabase
-            .table('mathces')
+            .table('matches')
             .insert(data)
             .execute()
         )
@@ -88,7 +88,7 @@ class MatchRepository:
 
         return(
             supabase
-            .table('mathces')
+            .table('matches')
             .update(filtered_data)
             .eq('id', match_id)
             .execute()
@@ -119,7 +119,7 @@ class MatchRepository:
 
         return (
             supabase
-            .table('mathces')
+            .table('matches')
             .update(filtered_data)
             .eq('id', tournament_id)
             .execute()
@@ -131,7 +131,7 @@ class MatchRepository:
     def delete_by_id(match_id: int):
         return(
             supabase
-            .table('mathces')
+            .table('matches')
             .delete()
             .eq('id', match_id)
             .execute()

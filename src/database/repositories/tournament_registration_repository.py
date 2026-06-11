@@ -1,5 +1,3 @@
-from dateutil.tz.win import valuestodict
-
 from database.connection import supabase
 
 class TournamentRegistrationRepository:
@@ -46,7 +44,7 @@ class TournamentRegistrationRepository:
     def get_by_status(reg_status: str):
         return(
             supabase
-            .table('tournament_registations')
+            .table('tournament_registrations')
             .select(TournamentRegistrationRepository.TABLE_FIELDS)
             .eq('status', reg_status)
             .single()
