@@ -367,3 +367,56 @@ class TeamWindow(ctk.CTkFrame):
         self.selected_tournament_id = tournament_id
         self.refresh_matches_list()
 
+    def signup_for_tournament(self, tournament_id):
+        if self.my_team is None:
+            # Alert user
+            self.select_tab("My Team")
+            return
+        
+        # TODO: Sign up team for tournament (INSERT INTO tournament_registrations)
+        self.registered_tournaments.add(tournament_id)
+        # Update registered teams count locally
+        for t in self.tournaments:
+            if t["id"] == tournament_id:
+                t["registered_teams"] += 1
+                break
+        self.refresh_tournaments_list()
+
+    def refresh_matches_list(self):
+        for widget in self.m_scroll.winfo_children():
+            widget.destroy()
+
+        t_matches = [m for m in self.matches if m["tournament_id"] == self.selected_tournament_id]
+
+        if not t_matches:
+            no_lbl = ctk.CTkLabel(self.m_scroll, text="No matches scheduled.", font=("Roboto", 13), text_color=TEXT_MUTED)
+            no_lbl.pack(pady=30)
+            return
+
+        for m in t_matches:
+            row = ctk.CTkFrame(self.m_scroll, fg_color="#181820", corner_radius=8, border_width=1, border_color="#2A2A35")
+            row.pack(fill="x", pady=4, padx=5)
+
+            info = ctk.CTkFrame(row, fg_color="transparent")
+            info.pack(side="left", padx=10, pady=8)
+            ctk.CTkLabel(info, text=m["round"], font=("Roboto", 11, "bold"), text_color=COLOR_PRIMARY, anchor="w").pack(fill="x")
+            ctk.CTkLabel(info, text=m["time"], font=("Roboto", 10), text_color=TEXT_MUTED, anchor="w").pack(fill="x")
+
+            teams = ctk.CTkFrame(row, fg_color="transparent")
+            teams.pack(side="left", expand=True, fill="both")
+            teams.grid_columnconfigure(0, weight=1)
+            teams.grid_columnconfigure(1, weight=0)
+            teams.grid_columnconfigure(2, weight=1)
+            teams.grid_rowconfigure(0, weight=1)
+
+            ctk.CTkLabel(teams, text=m["team1"], font=("Roboto", 11, "bold"), text_color=TEXT_PRIMARY, anchor="e").grid(row=0, column=0, sticky="ew", padx=5)
+            
+            score_text = f" {m['score1']} - {m['score2']} " if m["status"] in ["Finished", "In Progress"] else " VS "
+            ctk.CTkLabel(teams, text=score_text, font=("Roboto", 12, "bold"), text_color=COLOR_PRIMARY).grid(row=0, column=1)
+            
+            ctk.CTkLabel(teams, text=m["team2"], font=("Roboto", 11, "bold"), text_color=TEXT_PRIMARY, anchor="w").grid(row=0, column=2, sticky="ew", padx=5)
+
+            status_color = COLOR_SUCCESS if m["status"] == "Finished" else (COLOR_PRIMARY if m["status"] == "In Progress" else TEXT_MUTED)
+            status_badge = ctk.CTkLabel(row, text=m["status"].upper(), font=("Roboto", 9, "bold"), text_color=status_color)
+            status_badge.pack(side="right", padx=10)
+
