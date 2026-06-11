@@ -241,3 +241,43 @@ class TeamWindow(ctk.CTkFrame):
         self.current_tab = None
         self.select_tab("My Team")
 
+    def open_edit_team_dialog(self):
+        self.edit_dialog = ctk.CTkFrame(self.content_frame, fg_color="rgba(10, 10, 15, 0.8)")
+        self.edit_dialog.place(relx=0, rely=0, relwidth=1, relheight=1)
+
+        dialog = ctk.CTkFrame(self.edit_dialog, fg_color=BG_CARD, corner_radius=12, border_width=1, border_color="#3E3E52", width=420, height=380)
+        dialog.place(relx=0.5, rely=0.5, anchor="center")
+        dialog.pack_propagate(False)
+
+        title = ctk.CTkLabel(dialog, text="Edit Team Info", font=("Roboto", 16, "bold"), text_color=TEXT_PRIMARY)
+        title.pack(pady=15)
+
+        ctk.CTkLabel(dialog, text="Team Name", font=("Roboto", 12), text_color=TEXT_MUTED).pack(anchor="w", padx=30, pady=(5, 2))
+        self.edit_name = ctk.CTkEntry(dialog, height=35)
+        self.edit_name.insert(0, self.my_team["name"])
+        self.edit_name.pack(fill="x", padx=30)
+
+        ctk.CTkLabel(dialog, text="Region", font=("Roboto", 12), text_color=TEXT_MUTED).pack(anchor="w", padx=30, pady=(5, 2))
+        self.edit_region = ctk.CTkEntry(dialog, height=35)
+        self.edit_region.insert(0, self.my_team["region"])
+        self.edit_region.pack(fill="x", padx=30)
+
+        ctk.CTkLabel(dialog, text="Description", font=("Roboto", 12), text_color=TEXT_MUTED).pack(anchor="w", padx=30, pady=(5, 2))
+        self.edit_desc = ctk.CTkEntry(dialog, height=35)
+        self.edit_desc.insert(0, self.my_team["desc"])
+        self.edit_desc.pack(fill="x", padx=30, pady=(0, 15))
+
+        footer = ctk.CTkFrame(dialog, fg_color="transparent")
+        footer.pack(fill="x", side="bottom", pady=20, padx=30)
+
+        cancel = ctk.CTkButton(footer, text="Cancel", fg_color="transparent", border_width=1, border_color="#555566", hover_color="#2C2C35", height=32, corner_radius=6, command=self.close_edit_dialog)
+        cancel.pack(side="left", fill="x", expand=True, padx=(0, 5))
+
+        save = ctk.CTkButton(footer, text="Save Changes", fg_color=COLOR_PRIMARY, hover_color="#2E6299", height=32, corner_radius=6, command=self.save_team_changes)
+        save.pack(side="right", fill="x", expand=True, padx=(5, 0))
+
+    def close_edit_dialog(self):
+        if hasattr(self, 'edit_dialog') and self.edit_dialog:
+            self.edit_dialog.destroy()
+            self.edit_dialog = None
+
