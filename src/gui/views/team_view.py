@@ -420,3 +420,38 @@ class TeamWindow(ctk.CTkFrame):
             status_badge = ctk.CTkLabel(row, text=m["status"].upper(), font=("Roboto", 9, "bold"), text_color=status_color)
             status_badge.pack(side="right", padx=10)
 
+    def show_bracket_tab(self):
+        tab_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        tab_frame.pack(fill="both", expand=True)
+
+        header = ctk.CTkLabel(tab_frame, text="Tournament Playoff Bracket (Read Only)", font=("Roboto", 16, "bold"), text_color=TEXT_PRIMARY)
+        header.pack(anchor="w", pady=(0, 10))
+
+        t_options = {t["name"]: t["id"] for t in self.tournaments}
+        t_names = list(t_options.keys())
+        current_name = next((k for k, v in t_options.items() if v == self.selected_tournament_id), "Dota 2 Champions Cup")
+
+        sel_row = ctk.CTkFrame(tab_frame, fg_color="transparent")
+        sel_row.pack(fill="x", pady=(0, 10))
+
+        t_selector = ctk.CTkOptionMenu(
+            sel_row, 
+            values=t_names, 
+            width=220, 
+            height=30,
+            fg_color="#2A2A38", 
+            button_color="#3A3A4D",
+            command=lambda val: self.select_bracket_tournament(t_options[val])
+        )
+        t_selector.set(current_name)
+        t_selector.pack(side="left")
+
+        self.bracket_scroll = ctk.CTkScrollableFrame(tab_frame, fg_color=BG_CARD, corner_radius=10, border_width=1, border_color="#2E2E3A", orientation="both")
+        self.bracket_scroll.pack(fill="both", expand=True)
+
+        self.refresh_bracket_view()
+
+    def select_bracket_tournament(self, tournament_id):
+        self.selected_tournament_id = tournament_id
+        self.refresh_bracket_view()
+
