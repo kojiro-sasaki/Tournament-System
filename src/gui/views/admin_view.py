@@ -780,3 +780,62 @@ class AdminWindow(ctk.CTkFrame):
 
         return card_frame
 
+    def _make_champion_card(self, team_name, w, h):
+        frame = ctk.CTkFrame(
+            self.bracket_canvas, fg_color="#241B00", corner_radius=8,
+            width=w, height=h, border_width=2, border_color="#FFD700"
+        )
+        frame.pack_propagate(False)
+
+        label(frame, "🏆 CHAMPION", size=10, bold=True, color="#FFD700").pack(pady=(8, 0))
+        label(frame, team_name, size=12, bold=True, wraplength=w - 20).pack(pady=(2, 8))
+
+        return frame
+
+    # ------------------------------------------------------------------
+    # Teams tab
+    # ------------------------------------------------------------------
+    def show_teams_tab(self):
+        tab_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        tab_frame.pack(fill="both", expand=True)
+
+        list_panel = card(tab_frame)
+        list_panel.pack(fill="both", expand=True, padx=20, pady=20)
+
+        self.teams_scroll = scroll_list(list_panel, "Registered Teams Database")
+        self.refresh_teams_list()
+
+    def refresh_teams_list(self):
+        clear(self.teams_scroll)
+
+        for t in self.teams:
+            c = row_frame(self.teams_scroll)
+            c.pack(fill="x", pady=5, padx=5)
+
+            info = ctk.CTkFrame(c, fg_color="transparent")
+            info.pack(side="left", fill="both", expand=True, padx=15, pady=10)
+
+            title_row = ctk.CTkFrame(info, fg_color="transparent")
+            title_row.pack(fill="x")
+            label(title_row, t["name"], size=13, bold=True).pack(side="left")
+            label(title_row, f" [{t['tag']}]", size=11, bold=True, color=COLOR_PRIMARY).pack(side="left")
+
+            label(info, f"Region: {t['region']} • Description: {t['desc']}", size=11, color=TEXT_MUTED,
+                  anchor="w", wraplength=350, justify="left").pack(fill="x", pady=(2, 0))
+
+            act_frame = ctk.CTkFrame(c, fg_color="transparent")
+            act_frame.pack(side="right", padx=15, pady=10)
+
+            outline_button(act_frame, "Remove", lambda name=t["name"]: self.remove_team(name)).pack()
+
+
+
+    def remove_team(self, team_name):
+        for t in self.teams:
+            if t["name"] == team_name:
+                # TODO: INSERT INTO activities (message) VALUES (...)
+                self.activities.append(f"Team '{t['name']}' was removed from the database")
+                # TODO: DELETE FROM teams WHERE name = team_name
+                self.teams.remove(t)
+                break
+        self.refresh_teams_list()
