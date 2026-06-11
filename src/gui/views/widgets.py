@@ -91,3 +91,44 @@ def panel_title(parent, text, **pad):
     label(parent, text, size=16, bold=True).pack(anchor="w", **pad)
 
 
+def error_label(parent):
+    return ctk.CTkLabel(parent, text="", text_color=TEXT_DANGER, font=F(12))
+
+
+def two_column_layout(content_frame):
+    """Create the standard 40/60 split tab layout: form_panel | list_panel."""
+    tab_frame = ctk.CTkFrame(content_frame, fg_color="transparent")
+    tab_frame.pack(fill="both", expand=True)
+    tab_frame.grid_columnconfigure(0, weight=4)
+    tab_frame.grid_columnconfigure(1, weight=6)
+    tab_frame.grid_rowconfigure(0, weight=1)
+
+    form_panel = card(tab_frame)
+    form_panel.grid(row=0, column=0, padx=(0, 10), sticky="nsew")
+
+    list_panel = card(tab_frame)
+    list_panel.grid(row=0, column=1, padx=(10, 0), sticky="nsew")
+
+    return tab_frame, form_panel, list_panel
+
+
+def scroll_list(list_panel, title):
+    panel_title(list_panel, title)
+    scroll = ctk.CTkScrollableFrame(list_panel, fg_color="transparent")
+    scroll.pack(fill="both", expand=True, padx=10, pady=(0, 15))
+    return scroll
+
+
+def clear(widget):
+    for child in widget.winfo_children():
+        child.destroy()
+
+
+def status_color(status):
+    return {
+        "Draft": COLOR_WARNING,
+        "Registration Open": COLOR_PRIMARY,
+        "In Progress": COLOR_SUCCESS,
+        "Finished": COLOR_DANGER,
+        "Scheduled": TEXT_MUTED,
+    }.get(status, TEXT_MUTED)
