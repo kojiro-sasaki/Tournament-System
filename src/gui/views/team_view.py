@@ -258,3 +258,55 @@ class TeamWindow(ctk.CTkFrame):
         self.edit_name.pack(fill="x", padx=30)
 
         ctk.CTkLabel(dialog, text="Region", font=("Roboto", 12), text_color=TEXT_MUTED).pack(anchor="w", padx=30, pady=(5, 2))
+        self.edit_region = ctk.CTkEntry(dialog, height=35)
+        self.edit_region.insert(0, self.my_team["region"])
+        self.edit_region.pack(fill="x", padx=30)
+
+        ctk.CTkLabel(dialog, text="Description", font=("Roboto", 12), text_color=TEXT_MUTED).pack(anchor="w", padx=30, pady=(5, 2))
+        self.edit_desc = ctk.CTkEntry(dialog, height=35)
+        self.edit_desc.insert(0, self.my_team["desc"])
+        self.edit_desc.pack(fill="x", padx=30, pady=(0, 15))
+
+        footer = ctk.CTkFrame(dialog, fg_color="transparent")
+        footer.pack(fill="x", side="bottom", pady=20, padx=30)
+
+        cancel = ctk.CTkButton(footer, text="Cancel", fg_color="transparent", border_width=1, border_color="#555566", hover_color="#2C2C35", height=32, corner_radius=6, command=self.close_edit_dialog)
+        cancel.pack(side="left", fill="x", expand=True, padx=(0, 5))
+
+        save = ctk.CTkButton(footer, text="Save Changes", fg_color=COLOR_PRIMARY, hover_color="#2E6299", height=32, corner_radius=6, command=self.save_team_changes)
+        save.pack(side="right", fill="x", expand=True, padx=(5, 0))
+
+    def close_edit_dialog(self):
+        if hasattr(self, 'edit_dialog') and self.edit_dialog:
+            self.edit_dialog.destroy()
+            self.edit_dialog = None
+
+    def save_team_changes(self):
+        self.my_team["name"] = self.edit_name.get().strip()
+        self.my_team["region"] = self.edit_region.get().strip()
+        self.my_team["desc"] = self.edit_desc.get().strip()
+        self.close_edit_dialog()
+        self.show_my_team_tab()
+
+    def show_tournaments_tab(self):
+        tab_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        tab_frame.pack(fill="both", expand=True)
+
+        tab_frame.grid_columnconfigure(0, weight=5)
+        tab_frame.grid_columnconfigure(1, weight=5)
+        tab_frame.grid_rowconfigure(0, weight=1)
+
+        # Left list: Available Tournaments
+        left = ctk.CTkFrame(tab_frame, fg_color=BG_CARD, corner_radius=10, border_width=1, border_color="#2E2E3A")
+        left.grid(row=0, column=0, padx=(0, 10), sticky="nsew")
+
+        lbl = ctk.CTkLabel(left, text="Active Tournaments", font=("Roboto", 16, "bold"), text_color=TEXT_PRIMARY)
+        lbl.pack(anchor="w", padx=20, pady=(20, 15))
+
+        self.t_scroll = ctk.CTkScrollableFrame(left, fg_color="transparent")
+        self.t_scroll.pack(fill="both", expand=True, padx=10, pady=(0, 15))
+
+        # Right pane: Matches for chosen tournament
+        right = ctk.CTkFrame(tab_frame, fg_color=BG_CARD, corner_radius=10, border_width=1, border_color="#2E2E3A")
+        right.grid(row=0, column=1, padx=(10, 0), sticky="nsew")
+
