@@ -27,6 +27,15 @@ class TournamentRegistrationRepository:
             .execute()
         )
 
+    @staticmethod
+    def get_by_team_id(team_id: int):
+        return (
+            supabase
+            .table("tournament_registrations")
+            .select(TournamentRegistrationRepository.TABLE_FIELDS)
+            .eq("team_id", team_id)
+            .execute()
+        )
 
     @staticmethod
     def get_by_tournament_id(tournament_id: int):
@@ -38,6 +47,7 @@ class TournamentRegistrationRepository:
             .single()
             .execute()
         )
+
 
 
     @staticmethod

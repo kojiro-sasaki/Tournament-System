@@ -48,7 +48,6 @@ class TeamRepository:
             .table('teams')
             .select(TeamRepository.TEAM_FIELDS)
             .eq('captain_id', captain_id)
-            .single()
             .execute()
         )
 

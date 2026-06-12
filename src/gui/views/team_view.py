@@ -1,8 +1,8 @@
 import customtkinter as ctk
 import datetime
-
+from database.repositories.tournament_repository import TournamentRepository
 from database.repositories.team_repository import TeamRepository
-
+from database.repositories.tournament_registration_repository import TournamentRegistrationRepository
 BG_SIDEBAR = "#1A1A24"
 BG_MAIN = "#121216"
 BG_CARD = "#21212B"
@@ -26,21 +26,29 @@ class TeamWindow(ctk.CTkFrame):
         )
 
         self.my_team = response.data[0] if response.data else None
-        
+        if self.my_team:
+            response = TournamentRegistrationRepository.get_by_team_id(
+                self.my_team["id"]
+            )
+
+            self.registered_tournaments = {
+                row["tournament_id"]
+                for row in response.data
+            }
+        else:
+            self.registered_tournaments = set()
+
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
 
         # TODO: Fetch team profile belonging to this captain from database
 
         # TODO: Fetch active tournaments list from database
-        self.tournaments = [
-            {"id": 1, "name": "CS2 Summer Masters", "game": "Counter-Strike 2", "max_teams": 16, "status": "Registration Open", "registered_teams": 12, "date": "2026-06-15"},
-            {"id": 2, "name": "Dota 2 Champions Cup", "game": "Dota 2", "max_teams": 8, "status": "In Progress", "registered_teams": 8, "date": "2026-06-12"},
-            {"id": 3, "name": "CS2 Kyiv Major", "game": "Counter-Strike 2", "max_teams": 8, "status": "Draft", "registered_teams": 4, "date": "2026-07-01"}
-        ]
+        response = TournamentRepository.get_all()
+
+        self.tournaments = response.data
         
         # TODO: Fetch registered tournament IDs for this team from database
-        self.registered_tournaments = set()
 
         # TODO: Fetch matches list from database
         self.matches = [
@@ -367,7 +375,9 @@ class TeamWindow(ctk.CTkFrame):
             name = ctk.CTkLabel(details, text=t["name"], font=("Roboto", 13, "bold"), text_color=TEXT_PRIMARY, anchor="w")
             name.pack(fill="x")
 
-            game = ctk.CTkLabel(details, text=f"{t['game']} • Date: {t['date']}", font=("Roboto", 11), text_color=TEXT_MUTED, anchor="w")
+
+            game_name = "Counter-Strike 2" if t["game_id"] == 1 else "Dota 2"
+            game = ctk.CTkLabel(details,text=f"{game_name} • Date: {t['start_date']}",font=("Roboto", 11),text_color=TEXT_MUTED,anchor="w")
             game.pack(fill="x")
 
             status_color = COLOR_WARNING if t["status"] == "Draft" else (COLOR_PRIMARY if t["status"] == "Registration Open" else (COLOR_SUCCESS if t["status"] == "In Progress" else COLOR_DANGER))
@@ -397,20 +407,24 @@ class TeamWindow(ctk.CTkFrame):
         self.selected_tournament_id = tournament_id
         self.refresh_matches_list()
 
+    # TODO: Sign up team for tournament (INSERT INTO tournament_registrations)
     def signup_for_tournament(self, tournament_id):
         if self.my_team is None:
-            # Alert user
             self.select_tab("My Team")
             return
-        
-        # TODO: Sign up team for tournament (INSERT INTO tournament_registrations)
-        self.registered_tournaments.add(tournament_id)
-        # Update registered teams count locally
-        for t in self.tournaments:
-            if t["id"] == tournament_id:
-                t["registered_teams"] += 1
-                break
-        self.refresh_tournaments_list()
+
+        try:
+            TournamentRegistrationRepository.create({
+                "tournament_id": tournament_id,
+                "team_id": self.my_team["id"],
+                "status": "registered"
+            })
+
+            self.registered_tournaments.add(tournament_id)
+            self.refresh_tournaments_list()
+
+        except Exception as e:
+            print(f"REGISTRATION ERROR: {e}")
 
     def refresh_matches_list(self):
         for widget in self.m_scroll.winfo_children():
