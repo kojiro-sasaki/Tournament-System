@@ -25,6 +25,8 @@ class AdminWindow(ctk.CTkFrame):
 
         # TODO: SELECT * FROM tournaments
         self.tournaments = []
+        response = TournamentRepository.get_all()
+        self.tournaments = response.data
         # TODO: SELECT * FROM teams
         self.teams = []
         # TODO: SELECT * FROM matches
@@ -199,7 +201,9 @@ class AdminWindow(ctk.CTkFrame):
             details.pack(fill="x", padx=15, pady=10)
 
             label(details, t["name"], size=14, bold=True, anchor="w").pack(fill="x")
-            label(details, f"{t['game']} • Max Teams: {t['max_teams']} • Date: {t['date']}",
+            game_name = "Counter-Strike 2" if t["game_id"] == 1 else "Dota 2"
+
+            label(details, f"{game_name} • Max Teams: {t['max_teams']} • Date: {t['start_date']}",
                   size=11, color=TEXT_MUTED, anchor="w").pack(fill="x")
 
             status_frame = ctk.CTkFrame(c, fg_color="transparent")
@@ -275,14 +279,17 @@ class AdminWindow(ctk.CTkFrame):
             print(f"Tournament creation error: {e}")
 
     def change_tournament_status(self, tournament_id, new_status):
-        for t in self.tournaments:
-            if t["id"] == tournament_id:
-                # TODO: UPDATE tournaments SET status = new_status WHERE id = tournament_id
-                t["status"] = new_status
-                # TODO: INSERT INTO activities (message) VALUES (...)
-                self.activities.append(f"Tournament '{t['name']}' status changed to '{new_status}'")
-                break
-        self.refresh_tournaments_list()
+        try:
+            TournamentRepository.update_by_id(tournament_id,{"status": new_status})
+            for t in self.tournaments:
+                if t["id"] == tournament_id:
+                    t["status"] = new_status
+                    self.activities.append(f"Tournament '{t['name']}' status changed to '{new_status}'")
+                    break
+            self.refresh_tournaments_list()
+
+        except Exception as e:
+            print(f"Status update error: {e}")
 
     def delete_tournament(self, tournament_id):
         for t in self.tournaments:
