@@ -256,17 +256,14 @@ class AdminWindow(ctk.CTkFrame):
                 start_date=start_date,
                 end_date=start_date
             )
-
             if tournament:
                 self.tournaments.append({
                     "id": tournament["id"],
                     "name": tournament["name"],
-                    "game": game,
+                    "game_id": game_id,
                     "max_teams": max_teams,
                     "status": "Draft",
-                    "registered_teams": 0,
-                    "date": start_date,
-                    "teams": [],
+                    "start_date": start_date,
                 })
                 self.activities.append(f"Tournament '{name}' created successfully as 'Draft'")
                 self.t_name_entry.delete(0, "end")

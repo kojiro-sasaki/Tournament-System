@@ -50,8 +50,7 @@ class App(ctk.CTk):
         if user["username"].lower() == "aaa":
             self.main_frame = AdminWindow(self,on_logout=self.show_login_screen)
         else:
-            self.main_frame = TeamWindow(self,username=user["username"],on_logout=self.show_login_screen)
-
+            self.main_frame = TeamWindow(self,current_user=user,username=user["username"],on_logout=self.show_login_screen)
         self.main_frame.pack(fill="both", expand=True)
 
     def handle_register_success(self, username):

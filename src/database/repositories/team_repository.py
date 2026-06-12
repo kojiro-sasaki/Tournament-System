@@ -4,7 +4,7 @@ class TeamRepository:
 
 
     TEAM_FIELDS = (
-        'id, name, captain_id, created_at'
+        'id, name,tag, captain_id, created_at,description'
     )
 
     @staticmethod
@@ -71,7 +71,9 @@ class TeamRepository:
 
         allowed_fields = (
             'name',
-            'captain_id'
+            'captain_id',
+            'description',
+            'tag'
         )
 
         filtered_data = {
@@ -103,3 +105,4 @@ class TeamRepository:
             .eq('id', team_id)
             .execute()
         )
+
