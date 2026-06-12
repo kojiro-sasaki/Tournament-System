@@ -2,7 +2,7 @@ import customtkinter as ctk
 import datetime
 import tkinter as tk
 
-from database.tournament_repository import TournamentRepository
+from database.repositories.tournament_repository import TournamentRepository
 from services.tournament_service import TournamentService
 from src.logic.tournament_logic import generate_matches, get_next_match_index
 from src.gui.views.widgets import (
@@ -273,6 +273,7 @@ class AdminWindow(ctk.CTkFrame):
         except Exception as e:
             self.t_error_lbl.configure(text="Database error. Try again.")
             print(f"Tournament creation error: {e}")
+
     def change_tournament_status(self, tournament_id, new_status):
         for t in self.tournaments:
             if t["id"] == tournament_id:

@@ -17,12 +17,14 @@ class TournamentService:
         except ValueError:
             raise ValueError("Invalid date format. Use YYYY-MM-DD")
 
-        return self.tournament_repository.create(
-            name=name,
-            description=description,
-            game_id=game_id,
-            max_teams=max_teams,
-            start_date=start_date,
-            end_date=end_date,
-            status="Draft"
-        )
+        response = self.tournament_repository.create({
+            "name": name,
+            "description": description,
+            "game_id": game_id,
+            "max_teams": max_teams,
+            "start_date": start_date,
+            "end_date": end_date,
+            "status": "Draft"
+        })
+
+        return response.data[0]
