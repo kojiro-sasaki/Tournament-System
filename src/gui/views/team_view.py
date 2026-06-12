@@ -382,3 +382,145 @@ class TeamWindow(ctk.CTkFrame):
                 break
         self.refresh_tournaments_list()
 
+    def refresh_matches_list(self):
+        for widget in self.m_scroll.winfo_children():
+            widget.destroy()
+
+        t_matches = [m for m in self.matches if m["tournament_id"] == self.selected_tournament_id]
+
+        if not t_matches:
+            no_lbl = ctk.CTkLabel(self.m_scroll, text="No matches scheduled.", font=("Roboto", 13), text_color=TEXT_MUTED)
+            no_lbl.pack(pady=30)
+            return
+
+        for m in t_matches:
+            row = ctk.CTkFrame(self.m_scroll, fg_color="#181820", corner_radius=8, border_width=1, border_color="#2A2A35")
+            row.pack(fill="x", pady=4, padx=5)
+
+            info = ctk.CTkFrame(row, fg_color="transparent")
+            info.pack(side="left", padx=10, pady=8)
+            ctk.CTkLabel(info, text=m["round"], font=("Roboto", 11, "bold"), text_color=COLOR_PRIMARY, anchor="w").pack(fill="x")
+            ctk.CTkLabel(info, text=m["time"], font=("Roboto", 10), text_color=TEXT_MUTED, anchor="w").pack(fill="x")
+
+            teams = ctk.CTkFrame(row, fg_color="transparent")
+            teams.pack(side="left", expand=True, fill="both")
+            teams.grid_columnconfigure(0, weight=1)
+            teams.grid_columnconfigure(1, weight=0)
+            teams.grid_columnconfigure(2, weight=1)
+            teams.grid_rowconfigure(0, weight=1)
+
+            ctk.CTkLabel(teams, text=m["team1"], font=("Roboto", 11, "bold"), text_color=TEXT_PRIMARY, anchor="e").grid(row=0, column=0, sticky="ew", padx=5)
+            
+            score_text = f" {m['score1']} - {m['score2']} " if m["status"] in ["Finished", "In Progress"] else " VS "
+            ctk.CTkLabel(teams, text=score_text, font=("Roboto", 12, "bold"), text_color=COLOR_PRIMARY).grid(row=0, column=1)
+            
+            ctk.CTkLabel(teams, text=m["team2"], font=("Roboto", 11, "bold"), text_color=TEXT_PRIMARY, anchor="w").grid(row=0, column=2, sticky="ew", padx=5)
+
+            status_color = COLOR_SUCCESS if m["status"] == "Finished" else (COLOR_PRIMARY if m["status"] == "In Progress" else TEXT_MUTED)
+            status_badge = ctk.CTkLabel(row, text=m["status"].upper(), font=("Roboto", 9, "bold"), text_color=status_color)
+            status_badge.pack(side="right", padx=10)
+
+    def show_bracket_tab(self):
+        tab_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        tab_frame.pack(fill="both", expand=True)
+
+        header = ctk.CTkLabel(tab_frame, text="Tournament Playoff Bracket (Read Only)", font=("Roboto", 16, "bold"), text_color=TEXT_PRIMARY)
+        header.pack(anchor="w", pady=(0, 10))
+
+        t_options = {t["name"]: t["id"] for t in self.tournaments}
+        t_names = list(t_options.keys())
+        current_name = next((k for k, v in t_options.items() if v == self.selected_tournament_id), "Dota 2 Champions Cup")
+
+        sel_row = ctk.CTkFrame(tab_frame, fg_color="transparent")
+        sel_row.pack(fill="x", pady=(0, 10))
+
+        t_selector = ctk.CTkOptionMenu(
+            sel_row, 
+            values=t_names, 
+            width=220, 
+            height=30,
+            fg_color="#2A2A38", 
+            button_color="#3A3A4D",
+            command=lambda val: self.select_bracket_tournament(t_options[val])
+        )
+        t_selector.set(current_name)
+        t_selector.pack(side="left")
+
+        self.bracket_scroll = ctk.CTkScrollableFrame(tab_frame, fg_color=BG_CARD, corner_radius=10, border_width=1, border_color="#2E2E3A", orientation="both")
+        self.bracket_scroll.pack(fill="both", expand=True)
+
+        self.refresh_bracket_view()
+
+    def select_bracket_tournament(self, tournament_id):
+        self.selected_tournament_id = tournament_id
+        self.refresh_bracket_view()
+
+    def refresh_bracket_view(self):
+        for widget in self.bracket_scroll.winfo_children():
+            widget.destroy()
+
+        t_matches = [m for m in self.matches if m["tournament_id"] == self.selected_tournament_id]
+
+        if not t_matches or len(t_matches) < 7:
+            no_lbl = ctk.CTkLabel(self.bracket_scroll, text="A standard 8-team bracket is only available for 'Dota 2 Champions Cup' currently.", font=("Roboto", 14), text_color=TEXT_MUTED)
+            no_lbl.pack(pady=40)
+            return
+
+        bracket_grid = ctk.CTkFrame(self.bracket_scroll, fg_color="transparent")
+        bracket_grid.pack(padx=20, pady=20)
+
+        bracket_grid.grid_columnconfigure(0, minsize=200)
+        bracket_grid.grid_columnconfigure(1, minsize=200)
+        bracket_grid.grid_columnconfigure(2, minsize=200)
+        bracket_grid.grid_columnconfigure(3, minsize=180)
+
+        self.render_bracket_match(bracket_grid, t_matches[0], column=0, row=0)
+        self.render_bracket_match(bracket_grid, t_matches[1], column=0, row=2)
+        self.render_bracket_match(bracket_grid, t_matches[2], column=0, row=4)
+        self.render_bracket_match(bracket_grid, t_matches[3], column=0, row=6)
+
+        for r in [1, 3, 5]:
+            spacer = ctk.CTkLabel(bracket_grid, text="", height=40)
+            spacer.grid(row=r, column=0)
+
+        self.render_bracket_match(bracket_grid, t_matches[4], column=1, row=1)
+        self.render_bracket_match(bracket_grid, t_matches[5], column=1, row=5)
+
+        self.render_bracket_match(bracket_grid, t_matches[6], column=2, row=3)
+
+        winner_name = "TBD"
+        finals = t_matches[6]
+        if finals["status"] == "Finished":
+            winner_name = finals["team1"] if finals["score1"] > finals["score2"] else finals["team2"]
+
+        winner_frame = ctk.CTkFrame(bracket_grid, fg_color="#FFD700", corner_radius=10, width=160, height=65, border_width=2, border_color="#B59300")
+        winner_frame.grid(row=3, column=3, padx=10, sticky="center")
+        winner_frame.pack_propagate(False)
+
+        crown_lbl = ctk.CTkLabel(winner_frame, text="🏆 CHAMPION", font=("Roboto", 10, "bold"), text_color="#1E1E24")
+        crown_lbl.pack(pady=(6, 0))
+
+        team_lbl = ctk.CTkLabel(winner_frame, text=winner_name, font=("Roboto", 13, "bold"), text_color="#1E1E24", wraplength=140)
+        team_lbl.pack(pady=(2, 6))
+
+    def render_bracket_match(self, parent, m, column, row):
+        card = ctk.CTkFrame(parent, fg_color="#181820", corner_radius=8, border_width=1, border_color="#2E2E3A", width=180, height=75)
+        card.grid(row=row, column=column, padx=10, pady=10, sticky="nsew")
+        card.pack_propagate(False)
+
+        t1_bold = "bold" if m["status"] == "Finished" and m["score1"] > m["score2"] else "normal"
+        t2_bold = "bold" if m["status"] == "Finished" and m["score2"] > m["score1"] else "normal"
+
+        row1 = ctk.CTkFrame(card, fg_color="transparent")
+        row1.pack(fill="x", padx=10, pady=(8, 2))
+        lbl_t1 = ctk.CTkLabel(row1, text=m["team1"], font=("Roboto", 11, t1_bold), text_color=TEXT_PRIMARY, anchor="w", wraplength=110)
+        lbl_t1.pack(side="left")
+        score_t1 = ctk.CTkLabel(row1, text=str(m["score1"]) if m["status"] in ["Finished", "In Progress"] else "-", font=("Roboto", 11, "bold"), text_color=COLOR_PRIMARY)
+        score_t1.pack(side="right")
+
+        row2 = ctk.CTkFrame(card, fg_color="transparent")
+        row2.pack(fill="x", padx=10, pady=(2, 8))
+        lbl_t2 = ctk.CTkLabel(row2, text=m["team2"], font=("Roboto", 11, t2_bold), text_color=TEXT_PRIMARY, anchor="w", wraplength=110)
+        lbl_t2.pack(side="left")
+        score_t2 = ctk.CTkLabel(row2, text=str(m["score2"]) if m["status"] in ["Finished", "In Progress"] else "-", font=("Roboto", 11, "bold"), text_color=COLOR_PRIMARY)
+        score_t2.pack(side="right")
