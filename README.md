@@ -88,8 +88,8 @@ Drużyna może podać:
 ## Technologie
 
 * Python ![Python](https://img.shields.io/badge/Python-darkgreen?logo=python)
-* GUI Framework (do ustalenia)
-* SQLite ![SqlLite](https://img.shields.io/badge/SQLite-darkblue?logo=sqlite)
+* GUI Framework (Tkinter) ![Tkinter](https://img.shields.io/badge/Tkinter-blue?logo=tkinter)
+* Supabase(PostgreSQL) ![Supabase](https://img.shields.io/badge/supabase-black?logo=supabase)
 * pytest ![pytest](https://img.shields.io/badge/pytest-lightblue?logo=pytest)
 * GitHub Actions ![GitHub Actions](https://img.shields.io/badge/githubactions-gray?logo=githubactions)
 * Git + GitHub ![Git](https://img.shields.io/badge/git-black?logo=git) + ![GitHub](https://img.shields.io/badge/github-black?logo=github)
