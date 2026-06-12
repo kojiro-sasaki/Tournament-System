@@ -3,7 +3,7 @@ create table users (
   username text not null unique,
   email text not null unique,
   password_hash text not null,
-  role text not null,
+  role text default 'user' not null,
   created_at timestamp default current_timestamp
 )
 
@@ -33,18 +33,9 @@ create table teams (
   name text not null,
   captain_id bigint,
   created_at timestamp default current_timestamp,
+  description text,
 
   foreign key (captain_id) references users(id)
-)
-
-create table team_members (
-  id bigint generated always as identity primary key,
-  team_id bigint not null,
-  user_id bigint not null,
-  joined_at timestamp default current_timestamp,
-
-  foreign key (team_id) references teams(id),
-  foreign key (user_id) references users(id)
 )
 
 create table tournament_registrations (

@@ -34,7 +34,7 @@ class TournamentRegistrationRepository:
             supabase
             .table('tournament_registrations')
             .select(TournamentRegistrationRepository.TABLE_FIELDS)
-            .eq('id', tournament_id)
+            .eq('tournament_id', tournament_id)
             .single()
             .execute()
         )
