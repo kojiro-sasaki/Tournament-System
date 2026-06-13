@@ -4,8 +4,8 @@ import tkinter as tk
 
 from database.repositories.tournament_repository import TournamentRepository
 from services.tournament_service import TournamentService
-from src.logic.tournament_logic import generate_matches, get_next_match_index
-from src.gui.views.widgets import (
+from logic.tournament_logic import generate_matches, get_next_match_index
+from gui.views.widgets import (
     BG_SIDEBAR, BG_MAIN, BG_CARD, BG_ROW, BORDER, ROW_BORDER,
     COLOR_PRIMARY, COLOR_SUCCESS, COLOR_DANGER, COLOR_WARNING,
     TEXT_PRIMARY, TEXT_MUTED, TEXT_DANGER, F,

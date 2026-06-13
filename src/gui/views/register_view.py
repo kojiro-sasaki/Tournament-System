@@ -1,6 +1,6 @@
 import customtkinter as ctk
-from src.auth_backend import register_user
-from src.auth_backend.auth_service import RegistrationError
+from auth_backend import register_user
+from auth_backend.auth_service import RegistrationError
 
 class RegisterWindow(ctk.CTkFrame):
     def __init__(self, master, on_register_success, on_back_to_login):

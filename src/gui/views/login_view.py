@@ -1,5 +1,5 @@
 import customtkinter as ctk
-from src.services.login_service import LoginService
+from services.login_service import LoginService
 from database.repositories.repository import AccountRepository
 
 
