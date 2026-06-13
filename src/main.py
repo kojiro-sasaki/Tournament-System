@@ -1,7 +1,8 @@
 import customtkinter as ctk
 from gui.views.login_view import LoginWindow
 from gui.views.register_view import RegisterWindow
-
+from gui.views.admin_view import AdminWindow
+from gui.views.team_view import TeamWindow
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -39,8 +40,18 @@ class App(ctk.CTk):
             on_back_to_login=self.show_login_screen
         )
 
-    def handle_login_success(self, username):
-        print(f"Zalogowano pomyślnie użytkownika: {username}")
+    def handle_login_success(self, user):
+        print(f"Zalogowano: {user}")
+
+        self.geometry("1000x600")
+
+        for widget in self.winfo_children():widget.destroy()
+
+        if user["username"].lower() == "aaa":
+            self.main_frame = AdminWindow(self,on_logout=self.show_login_screen)
+        else:
+            self.main_frame = TeamWindow(self,current_user=user,username=user["username"],on_logout=self.show_login_screen)
+        self.main_frame.pack(fill="both", expand=True)
 
     def handle_register_success(self, username):
         print(f"Zarejestrowano pomyślnie użytkownika: {username}")

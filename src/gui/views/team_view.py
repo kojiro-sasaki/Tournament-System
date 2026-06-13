@@ -1,6 +1,8 @@
 import customtkinter as ctk
 import datetime
-
+from database.repositories.tournament_repository import TournamentRepository
+from database.repositories.team_repository import TeamRepository
+from database.repositories.tournament_registration_repository import TournamentRegistrationRepository
 BG_SIDEBAR = "#1A1A24"
 BG_MAIN = "#121216"
 BG_CARD = "#21212B"
@@ -12,26 +14,41 @@ TEXT_PRIMARY = "#FFFFFF"
 TEXT_MUTED = "#8E9297"
 
 class TeamWindow(ctk.CTkFrame):
-    def __init__(self, master, username="Captain", on_logout=None):
+    def __init__(self, master, current_user, username="Captain", on_logout=None):
+
         super().__init__(master, fg_color=BG_MAIN)
         self.username = username
         self.on_logout = on_logout
-        
+        self.current_user = current_user
+
+        response = TeamRepository.get_by_captain_id(
+            self.current_user["id"]
+        )
+
+        self.my_team = response.data[0] if response.data else None
+        if self.my_team:
+            response = TournamentRegistrationRepository.get_by_team_id(
+                self.my_team["id"]
+            )
+
+            self.registered_tournaments = {
+                row["tournament_id"]
+                for row in response.data
+            }
+        else:
+            self.registered_tournaments = set()
+
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
 
         # TODO: Fetch team profile belonging to this captain from database
-        self.my_team = None
 
         # TODO: Fetch active tournaments list from database
-        self.tournaments = [
-            {"id": 1, "name": "CS2 Summer Masters", "game": "Counter-Strike 2", "max_teams": 16, "status": "Registration Open", "registered_teams": 12, "date": "2026-06-15"},
-            {"id": 2, "name": "Dota 2 Champions Cup", "game": "Dota 2", "max_teams": 8, "status": "In Progress", "registered_teams": 8, "date": "2026-06-12"},
-            {"id": 3, "name": "CS2 Kyiv Major", "game": "Counter-Strike 2", "max_teams": 8, "status": "Draft", "registered_teams": 4, "date": "2026-07-01"}
-        ]
+        response = TournamentRepository.get_all()
+
+        self.tournaments = response.data
         
         # TODO: Fetch registered tournament IDs for this team from database
-        self.registered_tournaments = set()
 
         # TODO: Fetch matches list from database
         self.matches = [
@@ -183,9 +200,6 @@ class TeamWindow(ctk.CTkFrame):
             self.team_tag_entry = ctk.CTkEntry(form_panel, placeholder_text="e.g. NAVI", height=35)
             self.team_tag_entry.pack(fill="x", padx=20, pady=(0, 10))
 
-            ctk.CTkLabel(form_panel, text="Region", font=("Roboto", 12), text_color=TEXT_MUTED).pack(anchor="w", padx=20, pady=(5, 2))
-            self.team_region_entry = ctk.CTkEntry(form_panel, placeholder_text="e.g. Europe", height=35)
-            self.team_region_entry.pack(fill="x", padx=20, pady=(0, 10))
 
             ctk.CTkLabel(form_panel, text="Description", font=("Roboto", 12), text_color=TEXT_MUTED).pack(anchor="w", padx=20, pady=(5, 2))
             self.team_desc_text = ctk.CTkEntry(form_panel, placeholder_text="Brief details about the team...", height=35)
@@ -205,15 +219,13 @@ class TeamWindow(ctk.CTkFrame):
             lbl = ctk.CTkLabel(profile, text="Team Profile", font=("Roboto", 16, "bold"), text_color=TEXT_PRIMARY)
             lbl.pack(anchor="w", padx=20, pady=(20, 15))
 
-            name_lbl = ctk.CTkLabel(profile, text=f"{self.my_team['name']} [{self.my_team['tag']}]", font=("Roboto", 18, "bold"), text_color=COLOR_PRIMARY, anchor="w")
+            name_lbl = ctk.CTkLabel(profile, text=f"{self.my_team['name']} [{self.my_team['tag']}]",font=("Roboto", 18, "bold"), text_color=COLOR_PRIMARY, anchor="w")
             name_lbl.pack(fill="x", padx=20, pady=(5, 2))
 
-            ctk.CTkLabel(profile, text="Region:", font=("Roboto", 12), text_color=TEXT_MUTED).pack(anchor="w", padx=20, pady=(10, 2))
-            reg_lbl = ctk.CTkLabel(profile, text=self.my_team["region"], font=("Roboto", 14), text_color=TEXT_PRIMARY, anchor="w")
-            reg_lbl.pack(fill="x", padx=20)
+
 
             ctk.CTkLabel(profile, text="Description:", font=("Roboto", 12), text_color=TEXT_MUTED).pack(anchor="w", padx=20, pady=(10, 2))
-            desc_lbl = ctk.CTkLabel(profile, text=self.my_team["desc"], font=("Roboto", 13), text_color=TEXT_PRIMARY, anchor="w", justify="left", wraplength=400)
+            desc_lbl = ctk.CTkLabel(profile, text=self.my_team["description"], font=("Roboto", 13), text_color=TEXT_PRIMARY, anchor="w", justify="left", wraplength=400)
             desc_lbl.pack(fill="x", padx=20)
 
             # TODO: Edit team profile (UPDATE teams)
@@ -222,27 +234,37 @@ class TeamWindow(ctk.CTkFrame):
 
     def create_my_team(self):
         name = self.team_name_entry.get().strip()
-        tag = self.team_tag_entry.get().strip()
-        region = self.team_region_entry.get().strip()
         desc = self.team_desc_text.get().strip()
 
         self.team_error_lbl.configure(text="")
 
-        if not name or not tag or not region:
-            self.team_error_lbl.configure(text="Please fill in Name, Tag, and Region!")
+        if not name:
+            self.team_error_lbl.configure(
+                text="Please enter a team name!"
+            )
             return
 
-        self.my_team = {
-            "name": name,
-            "tag": tag,
-            "region": region,
-            "desc": desc if desc else "No description provided."
-        }
-        self.current_tab = None
-        self.select_tab("My Team")
+        try:
+            tag = self.team_tag_entry.get().strip()
+
+            response = TeamRepository.create({
+                "name": name,
+                "tag": tag,
+                "captain_id": self.current_user["id"],
+                "description": desc
+            })
+
+            self.my_team = response.data[0]
+
+            self.current_tab = None
+            self.select_tab("My Team")
+
+        except Exception as e:
+            self.team_error_lbl.configure(text=str(e))
+            print(f"CREATE TEAM ERROR: {e}")
 
     def open_edit_team_dialog(self):
-        self.edit_dialog = ctk.CTkFrame(self.content_frame, fg_color="rgba(10, 10, 15, 0.8)")
+        self.edit_dialog = ctk.CTkFrame(self.content_frame, fg_color="#121216")
         self.edit_dialog.place(relx=0, rely=0, relwidth=1, relheight=1)
 
         dialog = ctk.CTkFrame(self.edit_dialog, fg_color=BG_CARD, corner_radius=12, border_width=1, border_color="#3E3E52", width=420, height=380)
@@ -257,14 +279,14 @@ class TeamWindow(ctk.CTkFrame):
         self.edit_name.insert(0, self.my_team["name"])
         self.edit_name.pack(fill="x", padx=30)
 
-        ctk.CTkLabel(dialog, text="Region", font=("Roboto", 12), text_color=TEXT_MUTED).pack(anchor="w", padx=30, pady=(5, 2))
-        self.edit_region = ctk.CTkEntry(dialog, height=35)
-        self.edit_region.insert(0, self.my_team["region"])
-        self.edit_region.pack(fill="x", padx=30)
+        ctk.CTkLabel(dialog, text="Team Tag", font=("Roboto", 12), text_color=TEXT_MUTED).pack(anchor="w", padx=30,pady=(5, 2))
+        self.edit_tag = ctk.CTkEntry(dialog, height=35)
+        self.edit_tag.insert(0, self.my_team["tag"])
+        self.edit_tag.pack(fill="x", padx=30)
 
         ctk.CTkLabel(dialog, text="Description", font=("Roboto", 12), text_color=TEXT_MUTED).pack(anchor="w", padx=30, pady=(5, 2))
         self.edit_desc = ctk.CTkEntry(dialog, height=35)
-        self.edit_desc.insert(0, self.my_team["desc"])
+        self.edit_desc.insert(0, self.my_team["description"])
         self.edit_desc.pack(fill="x", padx=30, pady=(0, 15))
 
         footer = ctk.CTkFrame(dialog, fg_color="transparent")
@@ -282,11 +304,27 @@ class TeamWindow(ctk.CTkFrame):
             self.edit_dialog = None
 
     def save_team_changes(self):
-        self.my_team["name"] = self.edit_name.get().strip()
-        self.my_team["region"] = self.edit_region.get().strip()
-        self.my_team["desc"] = self.edit_desc.get().strip()
-        self.close_edit_dialog()
-        self.show_my_team_tab()
+        try:
+            TeamRepository.update_by_id(
+                self.my_team["id"],
+                {
+                    "name": self.edit_name.get().strip(),
+                    "tag": self.edit_tag.get().strip(),
+                    "description": self.edit_desc.get().strip()
+                }
+            )
+
+            self.my_team["name"] = self.edit_name.get().strip()
+            self.my_team["tag"] = self.edit_tag.get().strip()
+            self.my_team["description"] = self.edit_desc.get().strip()
+
+            self.close_edit_dialog()
+
+            self.current_tab = None
+            self.select_tab("My Team")
+
+        except Exception as e:
+            print(f"UPDATE TEAM ERROR: {e}")
 
     def show_tournaments_tab(self):
         tab_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
@@ -337,7 +375,9 @@ class TeamWindow(ctk.CTkFrame):
             name = ctk.CTkLabel(details, text=t["name"], font=("Roboto", 13, "bold"), text_color=TEXT_PRIMARY, anchor="w")
             name.pack(fill="x")
 
-            game = ctk.CTkLabel(details, text=f"{t['game']} • Date: {t['date']}", font=("Roboto", 11), text_color=TEXT_MUTED, anchor="w")
+
+            game_name = "Counter-Strike 2" if t["game_id"] == 1 else "Dota 2"
+            game = ctk.CTkLabel(details,text=f"{game_name} • Date: {t['start_date']}",font=("Roboto", 11),text_color=TEXT_MUTED,anchor="w")
             game.pack(fill="x")
 
             status_color = COLOR_WARNING if t["status"] == "Draft" else (COLOR_PRIMARY if t["status"] == "Registration Open" else (COLOR_SUCCESS if t["status"] == "In Progress" else COLOR_DANGER))
@@ -367,20 +407,24 @@ class TeamWindow(ctk.CTkFrame):
         self.selected_tournament_id = tournament_id
         self.refresh_matches_list()
 
+    # TODO: Sign up team for tournament (INSERT INTO tournament_registrations)
     def signup_for_tournament(self, tournament_id):
         if self.my_team is None:
-            # Alert user
             self.select_tab("My Team")
             return
-        
-        # TODO: Sign up team for tournament (INSERT INTO tournament_registrations)
-        self.registered_tournaments.add(tournament_id)
-        # Update registered teams count locally
-        for t in self.tournaments:
-            if t["id"] == tournament_id:
-                t["registered_teams"] += 1
-                break
-        self.refresh_tournaments_list()
+
+        try:
+            TournamentRegistrationRepository.create({
+                "tournament_id": tournament_id,
+                "team_id": self.my_team["id"],
+                "status": "registered"
+            })
+
+            self.registered_tournaments.add(tournament_id)
+            self.refresh_tournaments_list()
+
+        except Exception as e:
+            print(f"REGISTRATION ERROR: {e}")
 
     def refresh_matches_list(self):
         for widget in self.m_scroll.winfo_children():

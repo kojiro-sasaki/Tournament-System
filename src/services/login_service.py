@@ -16,4 +16,4 @@ class LoginService:
         if not verify_password(password, account['password_hash']):
             return False
 
-        return True
+        return account

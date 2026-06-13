@@ -44,9 +44,10 @@ class LoginWindow(ctk.CTkFrame):
             return
 
         try:
-            success = self.login_service.login(username, password)
-            if success:
-                self.on_login_success(username)
+            user = self.login_service.login(username, password)
+
+            if user:
+                self.on_login_success(user)
             else:
                 self.error_label.configure(text="Invalid username or password!")
         except Exception as e:

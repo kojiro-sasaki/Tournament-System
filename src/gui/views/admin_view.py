@@ -1,6 +1,9 @@
 import customtkinter as ctk
 import datetime
 import tkinter as tk
+
+from database.repositories.tournament_repository import TournamentRepository
+from services.tournament_service import TournamentService
 from src.logic.tournament_logic import generate_matches, get_next_match_index
 from src.gui.views.widgets import (
     BG_SIDEBAR, BG_MAIN, BG_CARD, BG_ROW, BORDER, ROW_BORDER,
@@ -16,12 +19,14 @@ class AdminWindow(ctk.CTkFrame):
     def __init__(self, master, on_logout=None):
         super().__init__(master, fg_color=BG_MAIN)
         self.on_logout = on_logout
-
+        self.tournament_service = TournamentService(TournamentRepository())
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
 
         # TODO: SELECT * FROM tournaments
         self.tournaments = []
+        response = TournamentRepository.get_all()
+        self.tournaments = response.data
         # TODO: SELECT * FROM teams
         self.teams = []
         # TODO: SELECT * FROM matches
@@ -176,18 +181,6 @@ class AdminWindow(ctk.CTkFrame):
         self.t_date_entry.insert(0, default_date)
         self.t_date_entry.pack(fill="x", padx=20, pady=(0, 10))
 
-        label(form_panel, "Select Teams", size=12, color=TEXT_MUTED).pack(anchor="w", padx=20, pady=(5, 2))
-        teams_scroll = ctk.CTkScrollableFrame(form_panel, fg_color=BG_ROW, height=120, border_width=1, border_color=BORDER)
-        teams_scroll.pack(fill="x", padx=20, pady=(0, 20))
-
-        self.team_checkboxes = {}
-        for t in self.teams:
-            var = ctk.StringVar(value="off")
-            cb = ctk.CTkCheckBox(teams_scroll, text=t["name"], variable=var, onvalue="on", offvalue="off",
-                                  fg_color=COLOR_PRIMARY, text_color=TEXT_PRIMARY, font=F(12))
-            cb.pack(anchor="w", pady=4, padx=5)
-            self.team_checkboxes[t["name"]] = var
-
         self.t_error_lbl = error_label(form_panel)
         self.t_error_lbl.pack(pady=(0, 5))
 
@@ -208,7 +201,9 @@ class AdminWindow(ctk.CTkFrame):
             details.pack(fill="x", padx=15, pady=10)
 
             label(details, t["name"], size=14, bold=True, anchor="w").pack(fill="x")
-            label(details, f"{t['game']} • Max Teams: {t['max_teams']} • Date: {t['date']}",
+            game_name = "Counter-Strike 2" if t["game_id"] == 1 else "Dota 2"
+
+            label(details, f"{game_name} • Max Teams: {t['max_teams']} • Date: {t['start_date']}",
                   size=11, color=TEXT_MUTED, anchor="w").pack(fill="x")
 
             status_frame = ctk.CTkFrame(c, fg_color="transparent")
@@ -235,7 +230,7 @@ class AdminWindow(ctk.CTkFrame):
         name = self.t_name_entry.get().strip()
         game = self.t_game_menu.get()
         max_teams = int(self.t_teams_menu.get())
-        date_str = self.t_date_entry.get().strip()
+        start_date = self.t_date_entry.get().strip()
 
         self.t_error_lbl.configure(text="")
 
@@ -244,54 +239,54 @@ class AdminWindow(ctk.CTkFrame):
             return
 
         try:
-            datetime.datetime.strptime(date_str, "%Y-%m-%d")
+            import datetime
+            datetime.datetime.strptime(start_date, "%Y-%m-%d")
         except ValueError:
             self.t_error_lbl.configure(text="Invalid date format! Use YYYY-MM-DD")
             return
 
-        selected_teams = [name_ for name_, var in self.team_checkboxes.items() if var.get() == "on"]
-        if len(selected_teams) != max_teams:
-            self.t_error_lbl.configure(text=f"Please select exactly {max_teams} teams!")
-            return
+        game_id = 1 if game == "Counter-Strike 2" else 2
 
-        new_id = max([t["id"] for t in self.tournaments]) + 1 if self.tournaments else 1
-        new_t = {
-            "id": new_id,
-            "name": name,
-            "game": game,
-            "max_teams": max_teams,
-            "status": "Draft",
-            "registered_teams": len(selected_teams),
-            "date": date_str,
-            "teams": selected_teams,
-        }
+        try:
+            tournament = self.tournament_service.create_tournament(
+                name=name,
+                description="",
+                game_id=game_id,
+                max_teams=max_teams,
+                start_date=start_date,
+                end_date=start_date
+            )
+            if tournament:
+                self.tournaments.append({
+                    "id": tournament["id"],
+                    "name": tournament["name"],
+                    "game_id": game_id,
+                    "max_teams": max_teams,
+                    "status": "Draft",
+                    "start_date": start_date,
+                })
+                self.activities.append(f"Tournament '{name}' created successfully as 'Draft'")
+                self.t_name_entry.delete(0, "end")
+                self.refresh_tournaments_list()
+            else:
+                self.t_error_lbl.configure(text="Failed to create tournament!")
 
-        # TODO: INSERT INTO tournaments (id, name, game, max_teams, status, registered_teams, date) VALUES (...)
-        self.tournaments.append(new_t)
-        # TODO: INSERT INTO activities (message) VALUES (...)
-        self.activities.append(f"Tournament '{name}' created successfully as 'Draft'")
-
-        if max_teams in (8, 16):
-            match_id_start = max([m["id"] for m in self.matches]) + 1 if self.matches else 1
-            new_matches = generate_matches(new_id, selected_teams, max_teams, match_id_start)
-            # TODO: INSERT INTO matches (id, tournament_id, round, team1, team2) VALUES (...)
-            self.matches.extend(new_matches)
-
-        self.t_name_entry.delete(0, "end")
-        for var in self.team_checkboxes.values():
-            var.set("off")
-
-        self.refresh_tournaments_list()
+        except Exception as e:
+            self.t_error_lbl.configure(text="Database error. Try again.")
+            print(f"Tournament creation error: {e}")
 
     def change_tournament_status(self, tournament_id, new_status):
-        for t in self.tournaments:
-            if t["id"] == tournament_id:
-                # TODO: UPDATE tournaments SET status = new_status WHERE id = tournament_id
-                t["status"] = new_status
-                # TODO: INSERT INTO activities (message) VALUES (...)
-                self.activities.append(f"Tournament '{t['name']}' status changed to '{new_status}'")
-                break
-        self.refresh_tournaments_list()
+        try:
+            TournamentRepository.update_by_id(tournament_id,{"status": new_status})
+            for t in self.tournaments:
+                if t["id"] == tournament_id:
+                    t["status"] = new_status
+                    self.activities.append(f"Tournament '{t['name']}' status changed to '{new_status}'")
+                    break
+            self.refresh_tournaments_list()
+
+        except Exception as e:
+            print(f"Status update error: {e}")
 
     def delete_tournament(self, tournament_id):
         for t in self.tournaments:
