@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import MagicMock
-from your_module import TournamentService
+from services.tournament_service import TournamentService
 
 @pytest.fixture
 def mock_repo():
