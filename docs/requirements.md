@@ -28,7 +28,6 @@ Administrator odpowiada za:
 * tworzenie turniejów,
 * ustawianie harmonogramu meczów,
 * zarządzanie przebiegiem turnieju,
-* wprowadzanie wyników,
 * generowanie drabinki turniejowej.
 
 ### Drużyna
@@ -46,7 +45,6 @@ Drużyna posiada własne konto i może:
 Drużyna może podać:
 
 * nazwę drużyny,
-* region,
 * opis drużyny.
 
 ## Funkcjonalności systemu
@@ -71,12 +69,10 @@ Drużyna może podać:
 * obsługa od 8 do 16 drużyn,
 * generowanie kolejnych rund,
 * automatyczne przesuwanie zwycięzców dalej,
-* obsługa trybu Single Elimination.
 
 ### Mecze
 
 * ustawianie czasu meczu,
-* zapisywanie wyników,
 * wyłanianie zwycięzców.
 
 ## Ograniczenia projektu
