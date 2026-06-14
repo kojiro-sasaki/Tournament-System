@@ -97,7 +97,7 @@ class AdminWindow(ctk.CTkFrame):
     def create_sidebar(self):
         sidebar = ctk.CTkFrame(self, fg_color=BG_SIDEBAR, width=220, corner_radius=0)
         sidebar.grid(row=0, column=0, sticky="nsew")
-        sidebar.grid_rowconfigure(6, weight=1)
+        sidebar.grid_rowconfigure(8, weight=1)
 
         label(sidebar, "Tournament System", size=18, bold=True).grid(
             row=0, column=0, padx=20, pady=(25, 5), sticky="w")
@@ -110,6 +110,7 @@ class AdminWindow(ctk.CTkFrame):
             ("Matches", "⚔️  Matches"),
             ("Bracket", "📊  Bracket"),
             ("Teams", "👥  Teams"),
+            ("Ranking", "🥇  Ranking"),
         ]
 
         for idx, (tab_name, display_text) in enumerate(tabs):
@@ -127,7 +128,7 @@ class AdminWindow(ctk.CTkFrame):
             fg_color="transparent", text_color="#FF6B6B", hover_color="#3A1C1C",
             corner_radius=8, command=self.on_logout
         )
-        logout_btn.grid(row=7, column=0, padx=10, pady=25, sticky="ew")
+        logout_btn.grid(row=9, column=0, padx=10, pady=25, sticky="ew")
 
     def select_tab(self, tab_name):
         if self.current_tab == tab_name:
@@ -149,8 +150,55 @@ class AdminWindow(ctk.CTkFrame):
             "Matches": self.show_matches_tab,
             "Bracket": self.show_bracket_tab,
             "Teams": self.show_teams_tab,
+            "Ranking": self.show_ranking_tab,
         }[tab_name]()
 
+    def show_ranking_tab(self):
+        tab_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        tab_frame.pack(fill="both", expand=True)
+
+        label(tab_frame, "Team Rankings", size=24, bold=True).pack(anchor="w", pady=(0, 20))
+
+        list_panel = card(tab_frame)
+        list_panel.pack(fill="both", expand=True)
+
+        panel_title(list_panel, "Tournament Winners Leaderboard")
+
+        scroll = ctk.CTkScrollableFrame(list_panel, fg_color="transparent")
+        scroll.pack(fill="both", expand=True, padx=10, pady=(0, 15))
+
+        sorted_teams = sorted(
+            [t for t in self.teams if (t.get("tournament_wins") or 0) > 0],
+            key=lambda t: t.get("tournament_wins", 0) or 0,
+            reverse=True
+        )
+
+        if not sorted_teams:
+            label(scroll, "No teams have won a tournament yet.", size=14, color=TEXT_MUTED).pack(pady=30)
+            return
+
+        medals = ["🥇", "🥈", "🥉"]
+
+        for idx, t in enumerate(sorted_teams):
+            c = row_frame(scroll)
+            c.pack(fill="x", pady=5, padx=5)
+
+            medal = medals[idx] if idx < 3 else f"#{idx + 1}"
+
+            rank_lbl = label(c, medal, size=20, bold=True)
+            rank_lbl.pack(side="left", padx=15, pady=10)
+
+            info = ctk.CTkFrame(c, fg_color="transparent")
+            info.pack(side="left", fill="both", expand=True, pady=10)
+
+            name_row = ctk.CTkFrame(info, fg_color="transparent")
+            name_row.pack(fill="x")
+            label(name_row, t["name"], size=13, bold=True).pack(side="left")
+            label(name_row, f" [{t['tag']}]", size=11, color=COLOR_PRIMARY).pack(side="left")
+
+            wins = t.get("tournament_wins", 0) or 0
+            label(c, f"🏆 {wins} win{'s' if wins != 1 else ''}", size=13, bold=True, color="#FFD700").pack(side="right",
+                                                                                                          padx=20)
     # ------------------------------------------------------------------
     # Dashboard
     # ------------------------------------------------------------------

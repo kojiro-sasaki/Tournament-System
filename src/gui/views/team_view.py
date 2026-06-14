@@ -6,6 +6,7 @@ from database.repositories.tournament_repository import TournamentRepository
 from database.repositories.team_repository import TeamRepository
 from database.repositories.tournament_registration_repository import TournamentRegistrationRepository
 from database.repositories.match_repository import MatchRepository
+from gui.views.widgets import row_frame, label, panel_title, card
 from logic.bracket_generator import generate_initial_bracket
 from database.repositories.match_result_repository import MatchResultRepository
 
@@ -109,10 +110,61 @@ class TeamWindow(ctk.CTkFrame):
         self.current_tab = None
         self.select_tab("Dashboard")
 
+
+
+    def show_ranking_tab(self):
+        response = TeamRepository.get_all()
+        teams = response.data or []
+        tab_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        tab_frame.pack(fill="both", expand=True)
+
+        label(tab_frame, "Team Rankings", size=24, bold=True).pack(anchor="w", pady=(0, 20))
+
+        list_panel = card(tab_frame)
+        list_panel.pack(fill="both", expand=True)
+
+        panel_title(list_panel, "Tournament Winners Leaderboard")
+
+        scroll = ctk.CTkScrollableFrame(list_panel, fg_color="transparent")
+        scroll.pack(fill="both", expand=True, padx=10, pady=(0, 15))
+
+        sorted_teams = sorted(
+            [t for t in teams if (t.get("tournament_wins") or 0) > 0],
+            key=lambda t: t.get("tournament_wins", 0) or 0,
+            reverse=True
+        )
+
+        if not sorted_teams:
+            label(scroll, "No teams have won a tournament yet.", size=14, color=TEXT_MUTED).pack(pady=30)
+            return
+
+        medals = ["🥇", "🥈", "🥉"]
+
+        for idx, t in enumerate(sorted_teams):
+            c = row_frame(scroll)
+            c.pack(fill="x", pady=5, padx=5)
+
+            medal = medals[idx] if idx < 3 else f"#{idx + 1}"
+
+            rank_lbl = label(c, medal, size=20, bold=True)
+            rank_lbl.pack(side="left", padx=15, pady=10)
+
+            info = ctk.CTkFrame(c, fg_color="transparent")
+            info.pack(side="left", fill="both", expand=True, pady=10)
+
+            name_row = ctk.CTkFrame(info, fg_color="transparent")
+            name_row.pack(fill="x")
+            label(name_row, t["name"], size=13, bold=True).pack(side="left")
+            label(name_row, f" [{t['tag']}]", size=11, color=COLOR_PRIMARY).pack(side="left")
+
+            wins = t.get("tournament_wins", 0) or 0
+            label(c, f"🏆 {wins} win{'s' if wins != 1 else ''}", size=13, bold=True, color="#FFD700").pack(side="right",
+                                                                                                          padx=20)
+
     def create_sidebar(self):
         self.sidebar_frame = ctk.CTkFrame(self, fg_color=BG_SIDEBAR, width=220, corner_radius=0)
         self.sidebar_frame.grid(row=0, column=0, sticky="nsew")
-        self.sidebar_frame.grid_rowconfigure(5, weight=1)
+        self.sidebar_frame.grid_rowconfigure(6, weight=1)
 
         brand_label = ctk.CTkLabel(
             self.sidebar_frame, 
@@ -134,7 +186,8 @@ class TeamWindow(ctk.CTkFrame):
             ("Dashboard", "🏠  Dashboard"),
             ("My Team", "👥  My Team"),
             ("Tournaments", "🏆  Tournaments"),
-            ("Bracket", "📊  Bracket")
+            ("Bracket", "📊  Bracket"),
+            ("Ranking", "🥇 Ranking")
         ]
 
         for idx, (tab_name, display_text) in enumerate(tabs):
@@ -165,7 +218,7 @@ class TeamWindow(ctk.CTkFrame):
             corner_radius=8,
             command=self.on_logout
         )
-        logout_btn.grid(row=6, column=0, padx=10, pady=25, sticky="ew")
+        logout_btn.grid(row=7, column=0, padx=10, pady=25, sticky="ew")
 
     def select_tab(self, tab_name):
         if self.current_tab == tab_name:
@@ -190,6 +243,8 @@ class TeamWindow(ctk.CTkFrame):
             self.show_tournaments_tab()
         elif tab_name == "Bracket":
             self.show_bracket_tab()
+        elif tab_name == "Ranking":
+            self.show_ranking_tab()
 
     def show_dashboard_tab(self):
         tab_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
