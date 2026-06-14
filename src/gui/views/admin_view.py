@@ -700,138 +700,138 @@ class AdminWindow(ctk.CTkFrame):
             key=lambda x: x.get("id", 0)
         )
 
-        def winner_name(m):
+        tournament = next((t for t in self.tournaments if t["id"] == tournament_id), None)
+        if not tournament:
+            return []
 
-            winner = winner_id(m)
+        max_teams = tournament.get("max_teams", 8)
+        is_16_teams = (max_teams == 16)
 
-            if winner == m["team1_id"]:
-                return m["team1"]
-
-            if winner == m["team2_id"]:
-                return m["team2"]
-
-            return "TBD"
-
-        def winner_id(m):
-
-            if m["status"] != "Finished":
+        def get_winner_id(m):
+            if m.get("status") != "Finished":
                 return None
 
             try:
-                result = MatchResultRepository.get_by_match_id(
-                    m["id"]
-                )
-
+                result = MatchResultRepository.get_by_match_id(m["id"])
                 if result.data:
                     return result.data["winner_team_id"]
-
-            except Exception as e:
-                print(e)
-
+            except Exception:
+                pass
             return None
 
-        if hasattr(self, "current_bracket_matches") and self.current_bracket_matches:
-            current_tournament_ids = {m["tournament_id"] for m in self.current_bracket_matches}
-            if tournament_id in current_tournament_ids:
-                return self.current_bracket_matches
+        def get_winner_name(m):
+            winner_id = get_winner_id(m)
+            if winner_id == m.get("team1_id"):
+                return m.get("team1", "TBD")
+            if winner_id == m.get("team2_id"):
+                return m.get("team2", "TBD")
+            return "TBD"
 
-        if len(existing_matches) == 4:
-            return existing_matches + [
-                {
-                    "id": None,
-                    "tournament_id": tournament_id,
-                    "round": "Semifinals",
-                    "team1": winner_name(existing_matches[0]),
-                    "team2": winner_name(existing_matches[1]),
-                    "team1_id": winner_id(existing_matches[0]),
-                    "team2_id": winner_id(existing_matches[1]),
-                    "score1": 0,
-                    "score2": 0,
-                    "status": "Scheduled"
-                },
-                {
-                    "id": None,
-                    "tournament_id": tournament_id,
-                    "round": "Semifinals",
-                    "team1": winner_name(existing_matches[2]),
-                    "team2": winner_name(existing_matches[3]),
-                    "team1_id": winner_id(existing_matches[2]),
-                    "team2_id": winner_id(existing_matches[3]),
-                    "score1": 0,
-                    "score2": 0,
-                    "status": "Scheduled"
-                },
-                {
-                    "id": None,
-                    "tournament_id": tournament_id,
-                    "round": "Finals",
-                    "team1": "TBD",
-                    "team2": "TBD",
-                    "team1_id": None,
-                    "team2_id": None,
-                    "score1": 0,
-                    "score2": 0,
-                    "status": "Scheduled"
-                },
-            ]
+        matches_by_id = {m.get("id"): m for m in existing_matches if m.get("id") is not None}
 
-        if len(existing_matches) == 8:
-            qf_matches = [
-                {
-                    "id": None,
-                    "tournament_id": tournament_id,
-                    "round": "Quarterfinals",
-                    "team1": winner_name(existing_matches[i * 2]),
-                    "team2": winner_name(existing_matches[i * 2 + 1]),
-                    "team1_id": winner_id(existing_matches[i * 2]),
-                    "team2_id": winner_id(existing_matches[i * 2 + 1]),
-                    "score1": 0,
-                    "score2": 0,
-                    "status": "Scheduled"
+        if not is_16_teams:
+            qf_matches = []
+            for i in range(4):
+                if i < len(existing_matches) and existing_matches[i].get("id") is not None:
+                    qf_matches.append(existing_matches[i])
+                else:
+                    qf_matches.append({
+                        "id": None, "tournament_id": tournament_id, "round": "Quarterfinals",
+                        "team1": "TBD", "team2": "TBD",
+                        "team1_id": None, "team2_id": None,
+                        "score1": 0, "score2": 0, "status": "Scheduled", "time": "TBD"
+                    })
+
+            sf_matches = []
+            for i in range(2):
+                existing_sf = next((m for m in existing_matches if m.get("round") == "Semifinals" and
+                                    ((i == 0 and (m.get("team1") == get_winner_name(qf_matches[0]) or m.get(
+                                        "team2") == get_winner_name(qf_matches[1]))) or
+                                     (i == 1 and (m.get("team1") == get_winner_name(qf_matches[2]) or m.get(
+                                         "team2") == get_winner_name(qf_matches[3]))))), None)
+
+                if existing_sf:
+                    sf_matches.append(existing_sf)
+                else:
+                    team1 = get_winner_name(qf_matches[i * 2]) if get_winner_id(qf_matches[i * 2]) else "TBD"
+                    team2 = get_winner_name(qf_matches[i * 2 + 1]) if get_winner_id(qf_matches[i * 2 + 1]) else "TBD"
+                    sf_matches.append({
+                        "id": None, "tournament_id": tournament_id, "round": "Semifinals",
+                        "team1": team1, "team2": team2,
+                        "team1_id": get_winner_id(qf_matches[i * 2]), "team2_id": get_winner_id(qf_matches[i * 2 + 1]),
+                        "score1": 0, "score2": 0, "status": "Scheduled", "time": "TBD"
+                    })
+
+            final_match = next((m for m in existing_matches if m.get("round") == "Finals"), None)
+            if not final_match:
+                team1 = get_winner_name(sf_matches[0]) if get_winner_id(sf_matches[0]) else "TBD"
+                team2 = get_winner_name(sf_matches[1]) if get_winner_id(sf_matches[1]) else "TBD"
+                final_match = {
+                    "id": None, "tournament_id": tournament_id, "round": "Finals",
+                    "team1": team1, "team2": team2,
+                    "team1_id": get_winner_id(sf_matches[0]), "team2_id": get_winner_id(sf_matches[1]),
+                    "score1": 0, "score2": 0, "status": "Scheduled", "time": "TBD"
                 }
-                for i in range(4)
-            ]
 
-            return existing_matches + qf_matches + [
-                {
-                    "id": None,
-                    "tournament_id": tournament_id,
-                    "round": "Semifinals",
-                    "team1": "TBD",
-                    "team2": "TBD",
-                    "team1_id": None,
-                    "team2_id": None,
-                    "score1": 0,
-                    "score2": 0,
-                    "status": "Scheduled"
-                },
-                {
-                    "id": None,
-                    "tournament_id": tournament_id,
-                    "round": "Semifinals",
-                    "team1": "TBD",
-                    "team2": "TBD",
-                    "team1_id": None,
-                    "team2_id": None,
-                    "score1": 0,
-                    "score2": 0,
-                    "status": "Scheduled"
-                },
-                {
-                    "id": None,
-                    "tournament_id": tournament_id,
-                    "round": "Finals",
-                    "team1": "TBD",
-                    "team2": "TBD",
-                    "team1_id": None,
-                    "team2_id": None,
-                    "score1": 0,
-                    "score2": 0,
-                    "status": "Scheduled"
-                },
-            ]
+            return qf_matches + sf_matches + [final_match]
 
-        return existing_matches
+        else:
+            ro16_matches = []
+            for i in range(8):
+                if i < len(existing_matches) and existing_matches[i].get("id") is not None:
+                    ro16_matches.append(existing_matches[i])
+                else:
+                    ro16_matches.append({
+                        "id": None, "tournament_id": tournament_id, "round": "Round of 16",
+                        "team1": "TBD", "team2": "TBD",
+                        "team1_id": None, "team2_id": None,
+                        "score1": 0, "score2": 0, "status": "Scheduled", "time": "TBD"
+                    })
+
+            qf_matches = []
+            for i in range(4):
+                existing_qf = next((m for m in existing_matches if m.get("round") == "Quarterfinals" and i == 0), None)
+                if existing_qf:
+                    qf_matches.append(existing_qf)
+                else:
+                    team1 = get_winner_name(ro16_matches[i * 2]) if get_winner_id(ro16_matches[i * 2]) else "TBD"
+                    team2 = get_winner_name(ro16_matches[i * 2 + 1]) if get_winner_id(
+                        ro16_matches[i * 2 + 1]) else "TBD"
+                    qf_matches.append({
+                        "id": None, "tournament_id": tournament_id, "round": "Quarterfinals",
+                        "team1": team1, "team2": team2,
+                        "team1_id": get_winner_id(ro16_matches[i * 2]),
+                        "team2_id": get_winner_id(ro16_matches[i * 2 + 1]),
+                        "score1": 0, "score2": 0, "status": "Scheduled", "time": "TBD"
+                    })
+
+            sf_matches = []
+            for i in range(2):
+                existing_sf = next((m for m in existing_matches if m.get("round") == "Semifinals" and i == 0), None)
+                if existing_sf:
+                    sf_matches.append(existing_sf)
+                else:
+                    team1 = get_winner_name(qf_matches[i * 2]) if get_winner_id(qf_matches[i * 2]) else "TBD"
+                    team2 = get_winner_name(qf_matches[i * 2 + 1]) if get_winner_id(qf_matches[i * 2 + 1]) else "TBD"
+                    sf_matches.append({
+                        "id": None, "tournament_id": tournament_id, "round": "Semifinals",
+                        "team1": team1, "team2": team2,
+                        "team1_id": get_winner_id(qf_matches[i * 2]), "team2_id": get_winner_id(qf_matches[i * 2 + 1]),
+                        "score1": 0, "score2": 0, "status": "Scheduled", "time": "TBD"
+                    })
+
+            final_match = next((m for m in existing_matches if m.get("round") == "Finals"), None)
+            if not final_match:
+                team1 = get_winner_name(sf_matches[0]) if get_winner_id(sf_matches[0]) else "TBD"
+                team2 = get_winner_name(sf_matches[1]) if get_winner_id(sf_matches[1]) else "TBD"
+                final_match = {
+                    "id": None, "tournament_id": tournament_id, "round": "Finals",
+                    "team1": team1, "team2": team2,
+                    "team1_id": get_winner_id(sf_matches[0]), "team2_id": get_winner_id(sf_matches[1]),
+                    "score1": 0, "score2": 0, "status": "Scheduled", "time": "TBD"
+                }
+
+            return ro16_matches + qf_matches + sf_matches + [final_match]
 
     # ------------------------------------------------------------------
     # Bracket tab
