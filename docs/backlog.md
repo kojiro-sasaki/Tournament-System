@@ -11,8 +11,6 @@
 
 * Tworzenie drużyn
 * Dodawanie informacji o drużynie
-* Dodawanie regionu drużyny
-* Wyświetlanie informacji o drużynie
 
 ## System turniejów
 
@@ -24,7 +22,6 @@
 
 * Zapisywanie drużyn do turnieju
 * Ograniczenie liczby drużyn (8–16)
-* Wyświetlanie zapisanych drużyn
 
 ## System rozgrywek
 
@@ -37,12 +34,10 @@
 
 * Tworzenie meczów
 * Ustawianie czasu meczów
-* Wprowadzanie wyników
 
 ## Statystyki
 
 * Ranking drużyn
-* Statystyki zwycięstw i porażek
 
 ## GUI
 
