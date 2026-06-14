@@ -4,7 +4,7 @@ class TeamRepository:
 
 
     TEAM_FIELDS = (
-        'id, name,tag, captain_id, created_at,description'
+        'id, name,tag, captain_id, created_at,description,tournament_wins'
     )
 
     @staticmethod
@@ -72,7 +72,8 @@ class TeamRepository:
             'name',
             'captain_id',
             'description',
-            'tag'
+            'tag',
+            'tournament_wins'
         )
 
         filtered_data = {
