@@ -30,6 +30,16 @@ class App(ctk.CTk):
             on_go_to_register=self.show_register_screen
         )
 
+    def show_register_screen(self):
+        for widget in self.winfo_children():
+            widget.destroy()
+
+        self.register_frame = RegisterWindow(
+            self,
+            on_register_success=self.handle_register_success,
+            on_back_to_login=self.show_login_screen
+        )
+
     def show_login_screen(self):
         self.geometry("400x500")
         self.center_window()
