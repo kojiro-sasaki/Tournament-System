@@ -1,5 +1,5 @@
 import customtkinter as ctk
-from src.services.login_service import LoginService
+from services.login_service import LoginService
 from database.repositories.repository import AccountRepository
 
 
@@ -18,9 +18,11 @@ class LoginWindow(ctk.CTkFrame):
 
         self.entry_username = ctk.CTkEntry(master=self, placeholder_text="Username", height=40)
         self.entry_username.pack(pady=(20, 10), padx=40, fill="x")
+        self.entry_username.bind("<Return>", lambda event: self.login_event())
 
         self.entry_password = ctk.CTkEntry(master=self, placeholder_text="Password", show="*", height=40)
         self.entry_password.pack(pady=10, padx=40, fill="x")
+        self.entry_password.bind("<Return>", lambda event: self.login_event())
 
         self.button_login = ctk.CTkButton(master=self, text="Log in", command=self.login_event, height=40)
         self.button_login.pack(pady=(20, 10), padx=40, fill="x")

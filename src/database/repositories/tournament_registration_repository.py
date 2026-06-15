@@ -112,3 +112,13 @@ class TournamentRegistrationRepository:
             .eq('id', reg_id)
             .execute()
         )
+
+    @staticmethod
+    def delete_by_tournament_id(tournament_id: int):
+        return (
+            supabase
+            .table("tournament_registrations")
+            .delete()
+            .eq("tournament_id", tournament_id)
+            .execute()
+        )

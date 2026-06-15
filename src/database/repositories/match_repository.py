@@ -121,7 +121,7 @@ class MatchRepository:
             supabase
             .table('matches')
             .update(filtered_data)
-            .eq('id', tournament_id)
+            .eq('tournament_id', tournament_id)
             .execute()
         )
 
@@ -134,5 +134,16 @@ class MatchRepository:
             .table('matches')
             .delete()
             .eq('id', match_id)
+            .execute()
+        )
+
+
+    @staticmethod
+    def delete_by_tournament_id(tournament_id: int):
+        return (
+            supabase
+            .table("matches")
+            .delete()
+            .eq("tournament_id", tournament_id)
             .execute()
         )

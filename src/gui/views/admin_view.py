@@ -4,8 +4,10 @@ import tkinter as tk
 
 from database.repositories.tournament_repository import TournamentRepository
 from services.tournament_service import TournamentService
-from src.logic.tournament_logic import generate_matches, get_next_match_index
-from src.gui.views.widgets import (
+from logic.tournament_logic import generate_matches, get_next_match_index
+from database.repositories.match_repository import MatchRepository
+from database.repositories.team_repository import TeamRepository
+from gui.views.widgets import (
     BG_SIDEBAR, BG_MAIN, BG_CARD, BG_ROW, BORDER, ROW_BORDER,
     COLOR_PRIMARY, COLOR_SUCCESS, COLOR_DANGER, COLOR_WARNING,
     TEXT_PRIMARY, TEXT_MUTED, TEXT_DANGER, F,
@@ -13,6 +15,9 @@ from src.gui.views.widgets import (
     form_field, panel_title, error_label, two_column_layout, scroll_list,
     clear, status_color,
 )
+
+from src.database.repositories.match_result_repository import MatchResultRepository
+from src.database.repositories.tournament_registration_repository import TournamentRegistrationRepository
 
 
 class AdminWindow(ctk.CTkFrame):
@@ -22,19 +27,58 @@ class AdminWindow(ctk.CTkFrame):
         self.tournament_service = TournamentService(TournamentRepository())
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
+        results = MatchResultRepository.get_all().data or []
 
+        results_map = {
+            r["match_id"]: r
+            for r in results
+        }
         # TODO: SELECT * FROM tournaments
         self.tournaments = []
         response = TournamentRepository.get_all()
         self.tournaments = response.data
-        # TODO: SELECT * FROM teams
-        self.teams = []
-        # TODO: SELECT * FROM matches
+        # Load teams
+        try:
+            t_resp = TeamRepository.get_all()
+            self.teams = t_resp.data or []
+        except Exception:
+            self.teams = []
+
+        # Load matches (normalize for UI)
+        try:
+            m_resp = MatchRepository.get_all()
+            raw_matches = m_resp.data or []
+        except Exception:
+            raw_matches = []
+
+        name_map = {t["id"]: t["name"] for t in self.teams}
         self.matches = []
+        for r in raw_matches:
+            result = results_map.get(r["id"])
+
+            self.matches.append({
+                "id": r.get("id"),
+                "tournament_id": r.get("tournament_id"),
+                "round": r.get("round_name") or r.get("round"),
+                "team1_id": r.get("team1_id"),
+                "team2_id": r.get("team2_id"),
+
+                "team1": name_map.get(r.get("team1_id")) or r.get("team1_name") or "TBD",
+                "team2": name_map.get(r.get("team2_id")) or r.get("team2_name") or "TBD",
+
+                "score1": result["score_team1"] if result else 0,
+                "score2": result["score_team2"] if result else 0,
+
+                "winner_team_id": result["winner_team_id"] if result else None,
+
+                "status": r.get("status", "Scheduled"),
+                "time": r.get("match_date") or "TBD",
+            })
         # TODO: SELECT * FROM activities ORDER BY created_at DESC
         self.activities = []
+        self.current_bracket_matches = None
 
-        self.selected_tournament_id = 1
+        self.selected_tournament_id = self.tournaments[0]["id"] if self.tournaments else None
 
         self.sidebar_buttons = {}
         self.create_sidebar()
@@ -53,7 +97,7 @@ class AdminWindow(ctk.CTkFrame):
     def create_sidebar(self):
         sidebar = ctk.CTkFrame(self, fg_color=BG_SIDEBAR, width=220, corner_radius=0)
         sidebar.grid(row=0, column=0, sticky="nsew")
-        sidebar.grid_rowconfigure(6, weight=1)
+        sidebar.grid_rowconfigure(8, weight=1)
 
         label(sidebar, "Tournament System", size=18, bold=True).grid(
             row=0, column=0, padx=20, pady=(25, 5), sticky="w")
@@ -66,6 +110,7 @@ class AdminWindow(ctk.CTkFrame):
             ("Matches", "⚔️  Matches"),
             ("Bracket", "📊  Bracket"),
             ("Teams", "👥  Teams"),
+            ("Ranking", "🥇  Ranking"),
         ]
 
         for idx, (tab_name, display_text) in enumerate(tabs):
@@ -83,7 +128,7 @@ class AdminWindow(ctk.CTkFrame):
             fg_color="transparent", text_color="#FF6B6B", hover_color="#3A1C1C",
             corner_radius=8, command=self.on_logout
         )
-        logout_btn.grid(row=7, column=0, padx=10, pady=25, sticky="ew")
+        logout_btn.grid(row=9, column=0, padx=10, pady=25, sticky="ew")
 
     def select_tab(self, tab_name):
         if self.current_tab == tab_name:
@@ -105,8 +150,55 @@ class AdminWindow(ctk.CTkFrame):
             "Matches": self.show_matches_tab,
             "Bracket": self.show_bracket_tab,
             "Teams": self.show_teams_tab,
+            "Ranking": self.show_ranking_tab,
         }[tab_name]()
 
+    def show_ranking_tab(self):
+        tab_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        tab_frame.pack(fill="both", expand=True)
+
+        label(tab_frame, "Team Rankings", size=24, bold=True).pack(anchor="w", pady=(0, 20))
+
+        list_panel = card(tab_frame)
+        list_panel.pack(fill="both", expand=True)
+
+        panel_title(list_panel, "Tournament Winners Leaderboard")
+
+        scroll = ctk.CTkScrollableFrame(list_panel, fg_color="transparent")
+        scroll.pack(fill="both", expand=True, padx=10, pady=(0, 15))
+
+        sorted_teams = sorted(
+            [t for t in self.teams if (t.get("tournament_wins") or 0) > 0],
+            key=lambda t: t.get("tournament_wins", 0) or 0,
+            reverse=True
+        )
+
+        if not sorted_teams:
+            label(scroll, "No teams have won a tournament yet.", size=14, color=TEXT_MUTED).pack(pady=30)
+            return
+
+        medals = ["🥇", "🥈", "🥉"]
+
+        for idx, t in enumerate(sorted_teams):
+            c = row_frame(scroll)
+            c.pack(fill="x", pady=5, padx=5)
+
+            medal = medals[idx] if idx < 3 else f"#{idx + 1}"
+
+            rank_lbl = label(c, medal, size=20, bold=True)
+            rank_lbl.pack(side="left", padx=15, pady=10)
+
+            info = ctk.CTkFrame(c, fg_color="transparent")
+            info.pack(side="left", fill="both", expand=True, pady=10)
+
+            name_row = ctk.CTkFrame(info, fg_color="transparent")
+            name_row.pack(fill="x")
+            label(name_row, t["name"], size=13, bold=True).pack(side="left")
+            label(name_row, f" [{t['tag']}]", size=11, color=COLOR_PRIMARY).pack(side="left")
+
+            wins = t.get("tournament_wins", 0) or 0
+            label(c, f"🏆 {wins} win{'s' if wins != 1 else ''}", size=13, bold=True, color="#FFD700").pack(side="right",
+                                                                                                          padx=20)
     # ------------------------------------------------------------------
     # Dashboard
     # ------------------------------------------------------------------
@@ -120,7 +212,10 @@ class AdminWindow(ctk.CTkFrame):
         stats_frame.pack(fill="x", pady=(0, 20))
         stats_frame.grid_columnconfigure((0, 1, 2), weight=1, uniform="equal")
 
-        active_matches_count = sum(1 for m in self.matches if m["status"] in ("In Progress", "Scheduled"))
+        finished_matches = sum(1 for m in self.matches if m["status"] == "Finished")
+        expected_matches = sum((t.get("max_teams", 0) - 1) for t in self.tournaments if t.get("max_teams") in (8, 16))
+        active_matches_count = max(expected_matches - finished_matches, 0)
+
         for col, (title, value, icon) in enumerate([
             ("Total Tournaments", str(len(self.tournaments)), "🏆"),
             ("Remaining Matches", str(active_matches_count), "⚔️"),
@@ -277,26 +372,77 @@ class AdminWindow(ctk.CTkFrame):
 
     def change_tournament_status(self, tournament_id, new_status):
         try:
-            TournamentRepository.update_by_id(tournament_id,{"status": new_status})
+            TournamentRepository.update_by_id(tournament_id, {"status": new_status})
             for t in self.tournaments:
                 if t["id"] == tournament_id:
                     t["status"] = new_status
                     self.activities.append(f"Tournament '{t['name']}' status changed to '{new_status}'")
                     break
+
+            if new_status == "Finished":
+                self._award_tournament_win(tournament_id)
+
             self.refresh_tournaments_list()
 
         except Exception as e:
             print(f"Status update error: {e}")
 
+    def _award_tournament_win(self, tournament_id):
+        try:
+            finals = next(
+                (m for m in self.matches
+                 if m["tournament_id"] == tournament_id and m["round"] == "Finals"),
+                None
+            )
+            if not finals:
+                print("Finals not found in self.matches")
+                return
+
+            winner_id = finals.get("winner_team_id")
+
+            if not winner_id and finals.get("id"):
+                result = MatchResultRepository.get_by_match_id(finals["id"])
+                if result and result.data:
+                    winner_id = result.data.get("winner_team_id")
+
+            if not winner_id:
+                print("Winner ID not found")
+                return
+
+            team = TeamRepository.get_by_id(winner_id)
+            if not team.data:
+                return
+
+            current_wins = team.data.get("tournament_wins", 0) or 0
+            TeamRepository.update_by_id(winner_id, {"tournament_wins": current_wins + 1})
+            print(f"Tournament win awarded to team {winner_id}, total wins: {current_wins + 1}")
+
+        except Exception as e:
+            print(f"Award win error: {e}")
+
     def delete_tournament(self, tournament_id):
-        for t in self.tournaments:
-            if t["id"] == tournament_id:
-                # TODO: INSERT INTO activities (message) VALUES (...)
-                self.activities.append(f"Tournament '{t['name']}' was deleted")
-                # TODO: DELETE FROM tournaments WHERE id = tournament_id
-                self.tournaments.remove(t)
-                break
-        self.refresh_tournaments_list()
+        try:
+            TournamentRegistrationRepository.delete_by_tournament_id(
+                tournament_id
+            )
+
+            MatchRepository.delete_by_tournament_id(
+                tournament_id
+            )
+
+            TournamentRepository.delete_by_id(
+                tournament_id
+            )
+
+            self.tournaments = [
+                t for t in self.tournaments
+                if t["id"] != tournament_id
+            ]
+
+            self.refresh_tournaments_list()
+
+        except Exception as e:
+            print(f"Delete tournament error: {e}")
 
     # ------------------------------------------------------------------
     # Matches tab
@@ -440,15 +586,34 @@ class AdminWindow(ctk.CTkFrame):
         match["score2"] = score2
         match["status"] = new_status
 
-        if new_status == "Finished":
-            # TODO: INSERT INTO activities (message) VALUES (...)
-            self.activities.append(f"Match {match['team1']} vs {match['team2']} finished with score {score1}:{score2}")
-            self.update_bracket_flow(match)
-        else:
-            # TODO: INSERT INTO activities (message) VALUES (...)
-            self.activities.append(f"Match {match['team1']} vs {match['team2']} updated to '{new_status}'")
+        if match.get("id") is not None:
+            MatchRepository.update_by_id(match["id"], {
+                "status": new_status
+            })
 
-        # TODO: UPDATE matches SET score1 = score1, score2 = score2, status = new_status WHERE id = match['id']
+        if new_status == "Finished":
+
+            winner_id = (
+                match["team1_id"]
+                if score1 > score2
+                else match["team2_id"]
+            )
+
+            MatchResultRepository.create({
+                "match_id": match["id"],
+                "winner_team_id": winner_id,
+                "score_team1": score1,
+                "score_team2": score2
+            })
+
+            self.activities.append(
+                f"Match {match['team1']} vs {match['team2']} finished with score {score1}:{score2}"
+            )
+
+            self.update_bracket_flow(match)
+
+        else:
+            self.activities.append(f"Match {match['team1']} vs {match['team2']} updated to '{new_status}'")
 
         self.close_score_dialog()
 
@@ -459,21 +624,214 @@ class AdminWindow(ctk.CTkFrame):
 
     def update_bracket_flow(self, match):
         t_id = match["tournament_id"]
-        t_matches = [m for m in self.matches if m["tournament_id"] == t_id]
-        if len(t_matches) not in (7, 15):
+        t_matches = None
+        if hasattr(self, "current_bracket_matches") and match in self.current_bracket_matches:
+            t_matches = self.current_bracket_matches
+        else:
+            t_matches = sorted(
+                [m for m in self.matches if m["tournament_id"] == t_id],
+                key=lambda x: x.get("id", 0)
+            )
+            if len(t_matches) == 4:
+                t_matches = t_matches + [
+                    {"id": None, "tournament_id": t_id, "round": "Semifinals", "team1": "TBD", "team2": "TBD", "score1": 0, "score2": 0, "status": "Scheduled"},
+                    {"id": None, "tournament_id": t_id, "round": "Semifinals", "team1": "TBD", "team2": "TBD", "score1": 0, "score2": 0, "status": "Scheduled"},
+                    {"id": None, "tournament_id": t_id, "round": "Finals", "team1": "TBD", "team2": "TBD", "score1": 0, "score2": 0, "status": "Scheduled"},
+                ]
+            elif len(t_matches) == 8:
+                t_matches = t_matches + [
+                    {"id": None, "tournament_id": t_id, "round": "Quarterfinals", "team1": "TBD", "team2": "TBD", "score1": 0, "score2": 0, "status": "Scheduled"},
+                    {"id": None, "tournament_id": t_id, "round": "Quarterfinals", "team1": "TBD", "team2": "TBD", "score1": 0, "score2": 0, "status": "Scheduled"},
+                    {"id": None, "tournament_id": t_id, "round": "Quarterfinals", "team1": "TBD", "team2": "TBD", "score1": 0, "score2": 0, "status": "Scheduled"},
+                    {"id": None, "tournament_id": t_id, "round": "Quarterfinals", "team1": "TBD", "team2": "TBD", "score1": 0, "score2": 0, "status": "Scheduled"},
+                    {"id": None, "tournament_id": t_id, "round": "Semifinals", "team1": "TBD", "team2": "TBD", "score1": 0, "score2": 0, "status": "Scheduled"},
+                    {"id": None, "tournament_id": t_id, "round": "Semifinals", "team1": "TBD", "team2": "TBD", "score1": 0, "score2": 0, "status": "Scheduled"},
+                    {"id": None, "tournament_id": t_id, "round": "Finals", "team1": "TBD", "team2": "TBD", "score1": 0, "score2": 0, "status": "Scheduled"},
+                ]
+
+        if len(t_matches) not in (4, 7, 8, 15):
             return
 
-        winner = match["team1"] if match["score1"] > match["score2"] else match["team2"]
+        winner_name = match["team1"] if match["score1"] > match["score2"] else match["team2"]
+        winner_id = match.get("team1_id") if match["score1"] > match["score2"] else match.get("team2_id")
         try:
             m_idx = t_matches.index(match)
         except ValueError:
             return
+        print("MATCH INDEX =", m_idx)
 
         next_idx = get_next_match_index(m_idx, len(t_matches))
+        print("NEXT INDEX =", next_idx)
         if next_idx < len(t_matches):
             team_key = "team1" if m_idx % 2 == 0 else "team2"
-            # TODO: UPDATE matches SET {team_key} = winner WHERE id = t_matches[next_idx]['id']
-            t_matches[next_idx][team_key] = winner
+            team_id_key = f"{team_key}_id"
+            t_matches[next_idx][team_key] = winner_name
+            t_matches[next_idx][team_id_key] = winner_id
+            next_match = t_matches[next_idx]
+            print("NEXT MATCH =", next_match)
+
+            if (
+                    next_match.get("id") is None
+                    and next_match.get("team1_id")
+                    and next_match.get("team2_id")
+            ):
+                created = MatchRepository.create({
+                    "tournament_id": t_id,
+                    "team1_id": next_match["team1_id"],
+                    "team2_id": next_match["team2_id"],
+                    "status": "Scheduled",
+                    "round_name": next_match["round"]
+                })
+
+                next_match["id"] = created.data[0]["id"]
+            next_match_id = t_matches[next_idx].get("id")
+            if next_match_id is not None and winner_id is not None:
+                MatchRepository.update_by_id(next_match_id, {team_id_key: winner_id})
+
+        if hasattr(self, "current_bracket_matches") and self.current_bracket_matches is t_matches:
+            self.current_bracket_matches = t_matches
+
+    def _get_expanded_bracket_matches(self, tournament_id):
+        if tournament_id is None:
+            return []
+
+        existing_matches = sorted(
+            [m for m in self.matches if m["tournament_id"] == tournament_id],
+            key=lambda x: x.get("id", 0)
+        )
+
+        tournament = next((t for t in self.tournaments if t["id"] == tournament_id), None)
+        if not tournament:
+            return []
+
+        max_teams = tournament.get("max_teams", 8)
+        is_16_teams = (max_teams == 16)
+
+        def get_winner_id(m):
+            if m.get("status") != "Finished":
+                return None
+
+            try:
+                result = MatchResultRepository.get_by_match_id(m["id"])
+                if result.data:
+                    return result.data["winner_team_id"]
+            except Exception:
+                pass
+            return None
+
+        def get_winner_name(m):
+            winner_id = get_winner_id(m)
+            if winner_id == m.get("team1_id"):
+                return m.get("team1", "TBD")
+            if winner_id == m.get("team2_id"):
+                return m.get("team2", "TBD")
+            return "TBD"
+
+        matches_by_id = {m.get("id"): m for m in existing_matches if m.get("id") is not None}
+
+        if not is_16_teams:
+            qf_matches = []
+            for i in range(4):
+                if i < len(existing_matches) and existing_matches[i].get("id") is not None:
+                    qf_matches.append(existing_matches[i])
+                else:
+                    qf_matches.append({
+                        "id": None, "tournament_id": tournament_id, "round": "Quarterfinals",
+                        "team1": "TBD", "team2": "TBD",
+                        "team1_id": None, "team2_id": None,
+                        "score1": 0, "score2": 0, "status": "Scheduled", "time": "TBD"
+                    })
+
+            sf_matches = []
+            for i in range(2):
+                existing_sf = next((m for m in existing_matches if m.get("round") == "Semifinals" and
+                                    ((i == 0 and (m.get("team1") == get_winner_name(qf_matches[0]) or m.get(
+                                        "team2") == get_winner_name(qf_matches[1]))) or
+                                     (i == 1 and (m.get("team1") == get_winner_name(qf_matches[2]) or m.get(
+                                         "team2") == get_winner_name(qf_matches[3]))))), None)
+
+                if existing_sf:
+                    sf_matches.append(existing_sf)
+                else:
+                    team1 = get_winner_name(qf_matches[i * 2]) if get_winner_id(qf_matches[i * 2]) else "TBD"
+                    team2 = get_winner_name(qf_matches[i * 2 + 1]) if get_winner_id(qf_matches[i * 2 + 1]) else "TBD"
+                    sf_matches.append({
+                        "id": None, "tournament_id": tournament_id, "round": "Semifinals",
+                        "team1": team1, "team2": team2,
+                        "team1_id": get_winner_id(qf_matches[i * 2]), "team2_id": get_winner_id(qf_matches[i * 2 + 1]),
+                        "score1": 0, "score2": 0, "status": "Scheduled", "time": "TBD"
+                    })
+
+            final_match = next((m for m in existing_matches if m.get("round") == "Finals"), None)
+            if not final_match:
+                team1 = get_winner_name(sf_matches[0]) if get_winner_id(sf_matches[0]) else "TBD"
+                team2 = get_winner_name(sf_matches[1]) if get_winner_id(sf_matches[1]) else "TBD"
+                final_match = {
+                    "id": None, "tournament_id": tournament_id, "round": "Finals",
+                    "team1": team1, "team2": team2,
+                    "team1_id": get_winner_id(sf_matches[0]), "team2_id": get_winner_id(sf_matches[1]),
+                    "score1": 0, "score2": 0, "status": "Scheduled", "time": "TBD"
+                }
+
+            return qf_matches + sf_matches + [final_match]
+
+        else:
+            ro16_matches = []
+            for i in range(8):
+                if i < len(existing_matches) and existing_matches[i].get("id") is not None:
+                    ro16_matches.append(existing_matches[i])
+                else:
+                    ro16_matches.append({
+                        "id": None, "tournament_id": tournament_id, "round": "Round of 16",
+                        "team1": "TBD", "team2": "TBD",
+                        "team1_id": None, "team2_id": None,
+                        "score1": 0, "score2": 0, "status": "Scheduled", "time": "TBD"
+                    })
+
+            qf_matches = []
+            for i in range(4):
+                existing_qf = next((m for m in existing_matches if m.get("round") == "Quarterfinals" and i == 0), None)
+                if existing_qf:
+                    qf_matches.append(existing_qf)
+                else:
+                    team1 = get_winner_name(ro16_matches[i * 2]) if get_winner_id(ro16_matches[i * 2]) else "TBD"
+                    team2 = get_winner_name(ro16_matches[i * 2 + 1]) if get_winner_id(
+                        ro16_matches[i * 2 + 1]) else "TBD"
+                    qf_matches.append({
+                        "id": None, "tournament_id": tournament_id, "round": "Quarterfinals",
+                        "team1": team1, "team2": team2,
+                        "team1_id": get_winner_id(ro16_matches[i * 2]),
+                        "team2_id": get_winner_id(ro16_matches[i * 2 + 1]),
+                        "score1": 0, "score2": 0, "status": "Scheduled", "time": "TBD"
+                    })
+
+            sf_matches = []
+            for i in range(2):
+                existing_sf = next((m for m in existing_matches if m.get("round") == "Semifinals" and i == 0), None)
+                if existing_sf:
+                    sf_matches.append(existing_sf)
+                else:
+                    team1 = get_winner_name(qf_matches[i * 2]) if get_winner_id(qf_matches[i * 2]) else "TBD"
+                    team2 = get_winner_name(qf_matches[i * 2 + 1]) if get_winner_id(qf_matches[i * 2 + 1]) else "TBD"
+                    sf_matches.append({
+                        "id": None, "tournament_id": tournament_id, "round": "Semifinals",
+                        "team1": team1, "team2": team2,
+                        "team1_id": get_winner_id(qf_matches[i * 2]), "team2_id": get_winner_id(qf_matches[i * 2 + 1]),
+                        "score1": 0, "score2": 0, "status": "Scheduled", "time": "TBD"
+                    })
+
+            final_match = next((m for m in existing_matches if m.get("round") == "Finals"), None)
+            if not final_match:
+                team1 = get_winner_name(sf_matches[0]) if get_winner_id(sf_matches[0]) else "TBD"
+                team2 = get_winner_name(sf_matches[1]) if get_winner_id(sf_matches[1]) else "TBD"
+                final_match = {
+                    "id": None, "tournament_id": tournament_id, "round": "Finals",
+                    "team1": team1, "team2": team2,
+                    "team1_id": get_winner_id(sf_matches[0]), "team2_id": get_winner_id(sf_matches[1]),
+                    "score1": 0, "score2": 0, "status": "Scheduled", "time": "TBD"
+                }
+
+            return ro16_matches + qf_matches + sf_matches + [final_match]
 
     # ------------------------------------------------------------------
     # Bracket tab
@@ -521,6 +879,7 @@ class AdminWindow(ctk.CTkFrame):
 
     def select_bracket_tournament(self, tournament_id):
         self.selected_tournament_id = tournament_id
+        self.current_bracket_matches = None
         self.refresh_bracket_view()
 
     def _draw_bracket_lines(self, canvas, positions, card_w, card_h, num_teams):
@@ -574,17 +933,18 @@ class AdminWindow(ctk.CTkFrame):
 
         self.bracket_canvas.delete("all")
 
-        t_matches = [m for m in self.matches if m["tournament_id"] == self.selected_tournament_id]
+        t_matches = self._get_expanded_bracket_matches(self.selected_tournament_id)
 
-        if not t_matches or len(t_matches) not in (7, 15):
+        if not t_matches:
             self.bracket_canvas.create_text(
                 300, 80,
-                text="A standard bracket requires 7 (8-team) or 15 (16-team) matches.",
+                text="No bracket matches exist for this tournament yet.",
                 fill=TEXT_MUTED, font=("Roboto", 13)
             )
             self.bracket_canvas.configure(scrollregion=(0, 0, 600, 160))
             return
 
+        self.current_bracket_matches = t_matches
         num_teams = 16 if len(t_matches) == 15 else 8
 
         PAD_X, PAD_Y = 30, 30
@@ -652,8 +1012,17 @@ class AdminWindow(ctk.CTkFrame):
             finals = t_matches[6]
 
         winner_name = "TBD"
-        if finals["status"] == "Finished":
-            winner_name = finals["team1"] if finals["score1"] > finals["score2"] else finals["team2"]
+        winner_id = finals.get("winner_team_id")
+
+        if winner_id == finals.get("team1_id"):
+            winner_name = finals["team1"]
+        elif winner_id == finals.get("team2_id"):
+            winner_name = finals["team2"]
+        elif finals.get("status") == "Finished":
+            if finals.get("score1", 0) > finals.get("score2", 0):
+                winner_name = finals["team1"]
+            elif finals.get("score2", 0) > finals.get("score1", 0):
+                winner_name = finals["team2"]
         champ_frame = self._make_champion_card(winner_name, CARD_W, CARD_H)
         cx, cy = positions["champion"]
         self.bracket_canvas.create_window(cx, cy, window=champ_frame, anchor="nw")
@@ -666,22 +1035,43 @@ class AdminWindow(ctk.CTkFrame):
         self.bracket_canvas.configure(scrollregion=(0, 0, total_w, total_h))
 
     def set_winner(self, match, winner_index):
+
         if winner_index == 1:
             match["score1"], match["score2"] = 1, 0
+            winner_id = match["team1_id"]
         else:
             match["score1"], match["score2"] = 0, 1
+            winner_id = match["team2_id"]
 
-        # TODO: UPDATE matches SET score1 = match['score1'], score2 = match['score2'], status = 'Finished' WHERE id = match['id']
         match["status"] = "Finished"
+
+        if match.get("id") is not None:
+            MatchRepository.update_by_id(
+                match["id"],
+                {"status": "Finished"}
+            )
+
+            MatchResultRepository.create({
+                "match_id": match["id"],
+                "winner_team_id": winner_id,
+                "score_team1": match["score1"],
+                "score_team2": match["score2"]
+            })
+
         self.update_bracket_flow(match)
         self.refresh_bracket_view()
 
     def reset_match(self, match):
         """Reset a finished match back to Scheduled so the winner can be changed."""
-        # TODO: UPDATE matches SET score1 = 0, score2 = 0, status = 'Scheduled' WHERE id = match['id']
         match["score1"] = 0
         match["score2"] = 0
         match["status"] = "Scheduled"
+        if match.get("id") is not None:
+            MatchRepository.update_by_id(match["id"], {
+                "score1": 0,
+                "score2": 0,
+                "status": "Scheduled"
+            })
 
         t_matches = [m for m in self.matches if m["tournament_id"] == match["tournament_id"]]
         if len(t_matches) not in (7, 15):
@@ -814,8 +1204,12 @@ class AdminWindow(ctk.CTkFrame):
             title_row.pack(fill="x")
             label(title_row, t["name"], size=13, bold=True).pack(side="left")
             label(title_row, f" [{t['tag']}]", size=11, bold=True, color=COLOR_PRIMARY).pack(side="left")
+            wins = t.get("tournament_wins", 0) or 0
+            if wins > 0:
+                label(title_row, f" 🏆 {wins}", size=11, bold=True, color="#FFD700").pack(side="left")
 
-            label(info, f"Region: {t['region']} • Description: {t['desc']}", size=11, color=TEXT_MUTED,
+            description = t.get("description") or "No description provided."
+            label(info, description, size=11, color=TEXT_MUTED,
                   anchor="w", wraplength=350, justify="left").pack(fill="x", pady=(2, 0))
 
             act_frame = ctk.CTkFrame(c, fg_color="transparent")
