@@ -16,15 +16,19 @@ class RegisterWindow(ctk.CTkFrame):
 
         self.entry_email = ctk.CTkEntry(master=self, placeholder_text="Email", height=40)
         self.entry_email.pack(pady=(10, 5), padx=40, fill="x")
+        self.entry_email.bind("<Return>", lambda event: self.register_event())
 
         self.entry_username = ctk.CTkEntry(master=self, placeholder_text="Username", height=40)
         self.entry_username.pack(pady=5, padx=40, fill="x")
+        self.entry_username.bind("<Return>", lambda event: self.register_event())
         
         self.entry_password = ctk.CTkEntry(master=self, placeholder_text="Password", show="*", height=40)
         self.entry_password.pack(pady=5, padx=40, fill="x")
+        self.entry_password.bind("<Return>", lambda event: self.register_event())
 
         self.entry_confirm_password = ctk.CTkEntry(master=self, placeholder_text="Confirm Password", show="*", height=40)
         self.entry_confirm_password.pack(pady=(5, 15), padx=40, fill="x")
+        self.entry_confirm_password.bind("<Return>", lambda event: self.register_event())
 
         self.button_register = ctk.CTkButton(master=self, text="Register", command=self.register_event, height=40)
         self.button_register.pack(pady=(15, 10), padx=40, fill="x")

@@ -47,7 +47,7 @@ class App(ctk.CTk):
 
         for widget in self.winfo_children():widget.destroy()
 
-        if user["username"].lower() == "aaa":
+        if user["role"].lower() == "admin":
             self.main_frame = AdminWindow(self,on_logout=self.show_login_screen)
         else:
             self.main_frame = TeamWindow(self,current_user=user,username=user["username"],on_logout=self.show_login_screen)
