@@ -20,14 +20,14 @@ class App(ctk.CTk):
         y = (self.winfo_screenheight() // 2) - (self.winfo_height() // 2)
         self.geometry(f"+{x}+{y}")
 
-    def show_login_screen(self):
+    def show_register_screen(self):
         for widget in self.winfo_children():
             widget.destroy()
-            
-        self.login_frame = LoginWindow(
-            self, 
-            on_login_success=self.handle_login_success,
-            on_go_to_register=self.show_register_screen
+
+        self.register_frame = RegisterWindow(
+            self,
+            on_register_success=self.handle_register_success,
+            on_back_to_login=self.show_login_screen
         )
 
     def show_login_screen(self):

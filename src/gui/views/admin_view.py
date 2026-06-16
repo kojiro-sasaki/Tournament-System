@@ -789,35 +789,75 @@ class AdminWindow(ctk.CTkFrame):
                     })
 
             qf_matches = []
+            quarterfinals = [
+                m for m in existing_matches
+                if m.get("round") == "Quarterfinals"
+            ]
+
             for i in range(4):
-                existing_qf = next((m for m in existing_matches if m.get("round") == "Quarterfinals" and i == 0), None)
+                existing_qf = (
+                    quarterfinals[i]
+                    if i < len(quarterfinals)
+                    else None
+                )
+
                 if existing_qf:
                     qf_matches.append(existing_qf)
                 else:
-                    team1 = get_winner_name(ro16_matches[i * 2]) if get_winner_id(ro16_matches[i * 2]) else "TBD"
-                    team2 = get_winner_name(ro16_matches[i * 2 + 1]) if get_winner_id(
-                        ro16_matches[i * 2 + 1]) else "TBD"
+                    team1 = get_winner_name(ro16_matches[i * 2]) \
+                        if get_winner_id(ro16_matches[i * 2]) else "TBD"
+
+                    team2 = get_winner_name(ro16_matches[i * 2 + 1]) \
+                        if get_winner_id(ro16_matches[i * 2 + 1]) else "TBD"
+
                     qf_matches.append({
-                        "id": None, "tournament_id": tournament_id, "round": "Quarterfinals",
-                        "team1": team1, "team2": team2,
+                        "id": None,
+                        "tournament_id": tournament_id,
+                        "round": "Quarterfinals",
+                        "team1": team1,
+                        "team2": team2,
                         "team1_id": get_winner_id(ro16_matches[i * 2]),
                         "team2_id": get_winner_id(ro16_matches[i * 2 + 1]),
-                        "score1": 0, "score2": 0, "status": "Scheduled", "time": "TBD"
+                        "score1": 0,
+                        "score2": 0,
+                        "status": "Scheduled",
+                        "time": "TBD"
                     })
 
             sf_matches = []
+            semifinals = [
+                m for m in existing_matches
+                if m.get("round") == "Semifinals"
+            ]
+
             for i in range(2):
-                existing_sf = next((m for m in existing_matches if m.get("round") == "Semifinals" and i == 0), None)
+                existing_sf = (
+                    semifinals[i]
+                    if i < len(semifinals)
+                    else None
+                )
+
                 if existing_sf:
                     sf_matches.append(existing_sf)
                 else:
-                    team1 = get_winner_name(qf_matches[i * 2]) if get_winner_id(qf_matches[i * 2]) else "TBD"
-                    team2 = get_winner_name(qf_matches[i * 2 + 1]) if get_winner_id(qf_matches[i * 2 + 1]) else "TBD"
+                    team1 = get_winner_name(qf_matches[i * 2]) \
+                        if get_winner_id(qf_matches[i * 2]) else "TBD"
+
+                    team2 = get_winner_name(qf_matches[i * 2 + 1]) \
+                        if get_winner_id(qf_matches[i * 2 + 1]) else "TBD"
+
                     sf_matches.append({
-                        "id": None, "tournament_id": tournament_id, "round": "Semifinals",
-                        "team1": team1, "team2": team2,
-                        "team1_id": get_winner_id(qf_matches[i * 2]), "team2_id": get_winner_id(qf_matches[i * 2 + 1]),
-                        "score1": 0, "score2": 0, "status": "Scheduled", "time": "TBD"
+                        "id": None,
+                        "tournament_id": tournament_id,
+                        "round": "Semifinals",
+                        "team1": team1,
+                        "team2": team2,
+                        "team1_id": get_winner_id(qf_matches[i * 2]),
+                        "team2_id": get_winner_id(qf_matches[i * 2 + 1]),
+                        "score1": 0,
+                        "score2": 0,
+                        "status": "Scheduled",
+                        "time": "TBD"
                     })
 
             final_match = next((m for m in existing_matches if m.get("round") == "Finals"), None)
@@ -1037,26 +1077,53 @@ class AdminWindow(ctk.CTkFrame):
     def set_winner(self, match, winner_index):
 
         if winner_index == 1:
-            match["score1"], match["score2"] = 1, 0
+            match["score1"] = 1
+            match["score2"] = 0
             winner_id = match["team1_id"]
         else:
-            match["score1"], match["score2"] = 0, 1
+            match["score1"] = 0
+            match["score2"] = 1
             winner_id = match["team2_id"]
 
+        match["winner_team_id"] = winner_id
         match["status"] = "Finished"
 
         if match.get("id") is not None:
+
             MatchRepository.update_by_id(
                 match["id"],
-                {"status": "Finished"}
+                {
+                    "status": "Finished"
+                }
             )
 
-            MatchResultRepository.create({
-                "match_id": match["id"],
-                "winner_team_id": winner_id,
-                "score_team1": match["score1"],
-                "score_team2": match["score2"]
-            })
+            try:
+                existing = MatchResultRepository.get_by_match_id(
+                    match["id"]
+                )
+
+                if existing and existing.data:
+
+                    MatchResultRepository.update_by_match_id(
+                        match["id"],
+                        {
+                            "winner_team_id": winner_id,
+                            "score_team1": match["score1"],
+                            "score_team2": match["score2"]
+                        }
+                    )
+
+                else:
+
+                    MatchResultRepository.create({
+                        "match_id": match["id"],
+                        "winner_team_id": winner_id,
+                        "score_team1": match["score1"],
+                        "score_team2": match["score2"]
+                    })
+
+            except Exception as e:
+                print("MATCH RESULT ERROR:", e)
 
         self.update_bracket_flow(match)
         self.refresh_bracket_view()
@@ -1091,11 +1158,15 @@ class AdminWindow(ctk.CTkFrame):
             team_key = "team1" if current % 2 == 0 else "team2"
             score_key = "score1" if current % 2 == 0 else "score2"
             # TODO: UPDATE matches SET {team_key} = 'TBD', {score_key} = 0, status = 'Scheduled' WHERE id = t_matches[next_idx]['id']
-            t_matches[next_idx][team_key] = "TBD"
-            t_matches[next_idx][score_key] = 0
-            t_matches[next_idx]["status"] = "Scheduled"
-            current = next_idx
+            team_key = "team1" if current % 2 == 0 else "team2"
+            team_id_key = f"{team_key}_id"
 
+            t_matches[next_idx][team_key] = "TBD"
+            t_matches[next_idx][team_id_key] = None
+
+            t_matches[next_idx]["score1"] = 0
+            t_matches[next_idx]["score2"] = 0
+            t_matches[next_idx]["status"] = "Scheduled"
         self.refresh_bracket_view()
 
     def _make_canvas_match_card(self, match, w, h):

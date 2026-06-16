@@ -29,3 +29,13 @@ class MatchResultRepository:
             .select("*")
             .execute()
         )
+
+    @staticmethod
+    def update_by_match_id(match_id, data):
+        return (
+            supabase
+            .table("match_results")
+            .update(data)
+            .eq("match_id", match_id)
+            .execute()
+        )

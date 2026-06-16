@@ -964,12 +964,18 @@ class TeamWindow(ctk.CTkFrame):
                     team1 = get_winner_name(qf_matches[i * 2]) if get_winner_id(qf_matches[i * 2]) else "TBD"
                     team2 = get_winner_name(qf_matches[i * 2 + 1]) if get_winner_id(qf_matches[i * 2 + 1]) else "TBD"
                     sf_matches.append({
-                        "id": None, "tournament_id": tournament_id, "round": "Semifinals",
-                        "team1": team1, "team2": team2,
-                        "team1_id": get_winner_id(qf_matches[i * 2]), "team2_id": get_winner_id(qf_matches[i * 2 + 1]),
-                        "score1": 0, "score2": 0, "status": "Scheduled", "time": "TBD"
+                        "id": None,
+                        "tournament_id": tournament_id,
+                        "round": "Semifinals",
+                        "team1": get_winner_name(qf_matches[i * 2]),
+                        "team2": get_winner_name(qf_matches[i * 2 + 1]),
+                        "team1_id": get_winner_id(qf_matches[i * 2]),
+                        "team2_id": get_winner_id(qf_matches[i * 2 + 1]),
+                        "score1": 0,
+                        "score2": 0,
+                        "status": "Scheduled",
+                        "time": "TBD"
                     })
-
             final_match = next((m for m in existing_matches if m.get("round") == "Finals"), None)
             if not final_match:
                 team1 = get_winner_name(sf_matches[0]) if get_winner_id(sf_matches[0]) else "TBD"
@@ -997,35 +1003,59 @@ class TeamWindow(ctk.CTkFrame):
                     })
 
             qf_matches = []
+            quarterfinals = [
+                m for m in existing_matches
+                if m.get("round") == "Quarterfinals"
+            ]
             for i in range(4):
-                existing_qf = next((m for m in existing_matches if m.get("round") == "Quarterfinals" and i == 0), None)
+                existing_qf = (
+                    quarterfinals[i]
+                    if i < len(quarterfinals)
+                    else None
+                )
+
                 if existing_qf:
                     qf_matches.append(existing_qf)
                 else:
-                    team1 = get_winner_name(ro16_matches[i * 2]) if get_winner_id(ro16_matches[i * 2]) else "TBD"
-                    team2 = get_winner_name(ro16_matches[i * 2 + 1]) if get_winner_id(
-                        ro16_matches[i * 2 + 1]) else "TBD"
                     qf_matches.append({
-                        "id": None, "tournament_id": tournament_id, "round": "Quarterfinals",
-                        "team1": team1, "team2": team2,
-                        "team1_id": get_winner_id(ro16_matches[i * 2]),
-                        "team2_id": get_winner_id(ro16_matches[i * 2 + 1]),
-                        "score1": 0, "score2": 0, "status": "Scheduled", "time": "TBD"
+                        "id": None,
+                        "tournament_id": tournament_id,
+                        "round": "Quarterfinals",
+                        "team1": get_winner_name(existing_matches[i * 2]),
+                        "team2": get_winner_name(existing_matches[i * 2 + 1]),
+                        "team1_id": get_winner_id(existing_matches[i * 2]),
+                        "team2_id": get_winner_id(existing_matches[i * 2 + 1]),
+                        "score1": 0,
+                        "score2": 0,
+                        "status": "Scheduled"
                     })
 
             sf_matches = []
+            semifinals = [
+                m for m in existing_matches
+                if m.get("round") == "Semifinals"
+            ]
             for i in range(2):
-                existing_sf = next((m for m in existing_matches if m.get("round") == "Semifinals" and i == 0), None)
+                existing_sf = (
+                    semifinals[i]
+                    if i < len(semifinals)
+                    else None
+                )
+
                 if existing_sf:
                     sf_matches.append(existing_sf)
                 else:
-                    team1 = get_winner_name(qf_matches[i * 2]) if get_winner_id(qf_matches[i * 2]) else "TBD"
-                    team2 = get_winner_name(qf_matches[i * 2 + 1]) if get_winner_id(qf_matches[i * 2 + 1]) else "TBD"
                     sf_matches.append({
-                        "id": None, "tournament_id": tournament_id, "round": "Semifinals",
-                        "team1": team1, "team2": team2,
-                        "team1_id": get_winner_id(qf_matches[i * 2]), "team2_id": get_winner_id(qf_matches[i * 2 + 1]),
-                        "score1": 0, "score2": 0, "status": "Scheduled", "time": "TBD"
+                        "id": None,
+                        "tournament_id": tournament_id,
+                        "round": "Semifinals",
+                        "team1": get_winner_name(qf_matches[i * 2]),
+                        "team2": get_winner_name(qf_matches[i * 2 + 1]),
+                        "team1_id": get_winner_id(qf_matches[i * 2]),
+                        "team2_id": get_winner_id(qf_matches[i * 2 + 1]),
+                        "score1": 0,
+                        "score2": 0,
+                        "status": "Scheduled"
                     })
 
             final_match = next((m for m in existing_matches if m.get("round") == "Finals"), None)
