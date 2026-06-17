@@ -880,12 +880,16 @@ class TeamWindow(ctk.CTkFrame):
         canvas.create_window(x, y, window=frame, anchor="nw")
 
     def _draw_champion_on_canvas(self, final_match, canvas, x, y, w, h):
-        """Rysuje kartę mistrza na canvas"""
         winner_name = "TBD"
         if final_match.get("status") == "Finished":
-            if final_match.get("score1", 0) > final_match.get("score2", 0):
+            winner_id = final_match.get("winner_team_id")
+            if winner_id and winner_id == final_match.get("team1_id"):
                 winner_name = final_match.get("team1", "TBD")
-            else:
+            elif winner_id and winner_id == final_match.get("team2_id"):
+                winner_name = final_match.get("team2", "TBD")
+            elif final_match.get("score1", 0) > final_match.get("score2", 0):
+                winner_name = final_match.get("team1", "TBD")
+            elif final_match.get("score2", 0) > final_match.get("score1", 0):
                 winner_name = final_match.get("team2", "TBD")
 
         frame = ctk.CTkFrame(canvas, fg_color="#241B00", corner_radius=8,
@@ -918,11 +922,10 @@ class TeamWindow(ctk.CTkFrame):
         def get_winner_id(m):
             if m.get("status") != "Finished":
                 return None
-
             try:
                 result = MatchResultRepository.get_by_match_id(m["id"])
-                if result.data:
-                    return result.data["winner_team_id"]
+                if result.data and len(result.data) > 0:
+                    return result.data[0]["winner_team_id"]
             except Exception:
                 pass
             return None

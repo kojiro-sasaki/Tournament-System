@@ -682,13 +682,12 @@ class AdminWindow(ctk.CTkFrame):
                     "status": "Scheduled",
                     "round_name": next_match["round"]
                 })
+                if created.data:
+                    next_match["id"] = created.data[0]["id"]
+                    if not any(m.get("id") == next_match["id"] for m in self.matches):
+                        self.matches.append(next_match)
 
-                next_match["id"] = created.data[0]["id"]
-            next_match_id = t_matches[next_idx].get("id")
-            if next_match_id is not None and winner_id is not None:
-                MatchRepository.update_by_id(next_match_id, {team_id_key: winner_id})
-
-        if hasattr(self, "current_bracket_matches") and self.current_bracket_matches is t_matches:
+        if hasattr(self, "current_bracket_matches") and self.current_bracket_matches is not None:
             self.current_bracket_matches = t_matches
 
     def _get_expanded_bracket_matches(self, tournament_id):
@@ -918,7 +917,6 @@ class AdminWindow(ctk.CTkFrame):
 
     def select_bracket_tournament(self, tournament_id):
         self.selected_tournament_id = tournament_id
-        self.current_bracket_matches = None
         self.refresh_bracket_view()
 
     def _draw_bracket_lines(self, canvas, positions, card_w, card_h, num_teams):
