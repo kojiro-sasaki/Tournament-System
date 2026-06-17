@@ -710,11 +710,10 @@ class AdminWindow(ctk.CTkFrame):
         def get_winner_id(m):
             if m.get("status") != "Finished":
                 return None
-
             try:
                 result = MatchResultRepository.get_by_match_id(m["id"])
-                if result.data:
-                    return result.data["winner_team_id"]
+                if result.data and len(result.data) > 0:
+                    return result.data[0]["winner_team_id"]  # [0] вместо прямого доступа
             except Exception:
                 pass
             return None
@@ -1075,7 +1074,6 @@ class AdminWindow(ctk.CTkFrame):
         self.bracket_canvas.configure(scrollregion=(0, 0, total_w, total_h))
 
     def set_winner(self, match, winner_index):
-
         if winner_index == 1:
             match["score1"] = 1
             match["score2"] = 0
@@ -1088,40 +1086,37 @@ class AdminWindow(ctk.CTkFrame):
         match["winner_team_id"] = winner_id
         match["status"] = "Finished"
 
-        if match.get("id") is not None:
+        if match.get("id") is None:
+            if match.get("team1_id") and match.get("team2_id"):
+                created = MatchRepository.create({
+                    "tournament_id": match["tournament_id"],
+                    "team1_id": match["team1_id"],
+                    "team2_id": match["team2_id"],
+                    "status": "Finished",
+                    "round_name": match["round"]
+                })
+                if created.data:
+                    match["id"] = created.data[0]["id"]
+                    self.matches.append(match)
 
-            MatchRepository.update_by_id(
-                match["id"],
-                {
-                    "status": "Finished"
-                }
-            )
+        if match.get("id") is not None:
+            MatchRepository.update_by_id(match["id"], {"status": "Finished"})
 
             try:
-                existing = MatchResultRepository.get_by_match_id(
-                    match["id"]
-                )
-
-                if existing and existing.data:
-
-                    MatchResultRepository.update_by_match_id(
-                        match["id"],
-                        {
-                            "winner_team_id": winner_id,
-                            "score_team1": match["score1"],
-                            "score_team2": match["score2"]
-                        }
-                    )
-
+                existing = MatchResultRepository.get_by_match_id(match["id"])
+                if existing and existing.data and len(existing.data) > 0:
+                    MatchResultRepository.update_by_match_id(match["id"], {
+                        "winner_team_id": winner_id,
+                        "score_team1": match["score1"],
+                        "score_team2": match["score2"]
+                    })
                 else:
-
                     MatchResultRepository.create({
                         "match_id": match["id"],
                         "winner_team_id": winner_id,
                         "score_team1": match["score1"],
                         "score_team2": match["score2"]
                     })
-
             except Exception as e:
                 print("MATCH RESULT ERROR:", e)
 
@@ -1157,7 +1152,6 @@ class AdminWindow(ctk.CTkFrame):
                 break
             team_key = "team1" if current % 2 == 0 else "team2"
             score_key = "score1" if current % 2 == 0 else "score2"
-            # TODO: UPDATE matches SET {team_key} = 'TBD', {score_key} = 0, status = 'Scheduled' WHERE id = t_matches[next_idx]['id']
             team_key = "team1" if current % 2 == 0 else "team2"
             team_id_key = f"{team_key}_id"
 
@@ -1170,7 +1164,6 @@ class AdminWindow(ctk.CTkFrame):
         self.refresh_bracket_view()
 
     def _make_canvas_match_card(self, match, w, h):
-        """Build a match card widget to be placed on the canvas via create_window."""
         finished = match["status"] == "Finished"
         border_color = COLOR_SUCCESS if finished else "#5A2E8A"
 

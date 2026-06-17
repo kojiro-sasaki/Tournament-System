@@ -5,10 +5,9 @@ class MatchResultRepository:
     def get_by_match_id(match_id: int):
         return (
             supabase
-            .table("match_results")
-            .select("*")
-            .eq("match_id", match_id)
-            .single()
+            .table('match_results')
+            .select('*')
+            .eq('match_id', match_id)
             .execute()
         )
 
