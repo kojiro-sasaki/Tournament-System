@@ -223,21 +223,46 @@ class AdminWindow(ctk.CTkFrame):
         ]):
             self.create_stat_card(stats_frame, col, title, value, icon)
 
-        activity_panel = card(tab_frame)
-        activity_panel.pack(fill="both", expand=True)
-        panel_title(activity_panel, "Recent Activities Log", pady=(15, 10))
 
-        log_frame = ctk.CTkScrollableFrame(activity_panel, fg_color="transparent")
-        log_frame.pack(fill="both", expand=True, padx=10, pady=(0, 15))
+        label(tab_frame, "Tournaments Overview", size=18, bold=True).pack(anchor="w", pady=(20, 15))
 
-        for activity in reversed(self.activities):
-            row = ctk.CTkFrame(log_frame, fg_color=BG_ROW, height=40, corner_radius=6)
-            row.pack(fill="x", pady=4, padx=5)
-            row.pack_propagate(False)
+        stats_frame = ctk.CTkFrame(tab_frame, fg_color="transparent")
+        stats_frame.pack(fill="x", pady=(0, 20))
 
-            label(row, "●", size=12, color=COLOR_PRIMARY).pack(side="left", padx=(15, 10))
-            label(row, activity, size=13).pack(side="left", fill="both")
-            label(row, "Just now", size=11, color=TEXT_MUTED).pack(side="right", padx=15)
+        finished_tournaments = sum(1 for t in self.tournaments if t.get("status") == "Finished")
+        in_progress = sum(1 for t in self.tournaments if t.get("status") == "In Progress")
+        draft = sum(1 for t in self.tournaments if t.get("status") == "Draft")
+
+        registration_open = 0
+        full_registration = 0
+        for t in self.tournaments:
+            if t.get("status") == "Registration Open":
+                registration_open += 1
+                try:
+                    regs_resp = TournamentRegistrationRepository.get_all()
+                    regs = [r for r in (regs_resp.data or []) if r.get("tournament_id") == t["id"]]
+                    registered_count = len(regs)
+                    max_teams = t.get("max_teams", 8)
+                    if registered_count >= max_teams:
+                        full_registration += 1
+                except Exception:
+                    pass
+
+        statuses = [
+            ("Finished", finished_tournaments),
+            ("In Progress", in_progress),
+            ("Registration Open", f"{full_registration} full  /  {registration_open}"),
+            ("Draft", draft),
+        ]
+
+        for title, value in statuses:
+            c = card(stats_frame, height=65)
+            c.pack(fill="x", pady=5, padx=0)
+            c.pack_propagate(False)
+
+            label(c, title, size=15, bold=True, color=TEXT_PRIMARY, anchor="w").pack(side="left", padx=20)
+
+            label(c, str(value), size=18, bold=True, color=TEXT_PRIMARY, anchor="e").pack(side="right", padx=20)
 
     def create_stat_card(self, parent, column, title, value, icon):
         c = card(parent, height=100)

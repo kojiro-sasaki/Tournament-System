@@ -261,11 +261,12 @@ class TeamWindow(ctk.CTkFrame):
 
         status_text = "No team registered yet. Go to 'My Team' to create one."
         if self.my_team:
-            status_text = f"Your team '{self.my_team['name']} [{self.my_team['tag']}]' is active.\n" \
+            status_text = f"Your team '{self.my_team['name']} [{self.my_team['tag']}]' is active.\n\n" \
                           f"You have registered for {len(self.registered_tournaments)} tournament(s)."
 
-        desc_lbl = ctk.CTkLabel(info_panel, text=status_text, font=("Roboto", 14), text_color=TEXT_PRIMARY, justify="left")
-        desc_lbl.pack(anchor="w", padx=20, pady=10)
+        desc_lbl = ctk.CTkLabel(info_panel, text=status_text, font=("Roboto", 16), text_color=TEXT_PRIMARY,
+                                justify="left")
+        desc_lbl.pack(anchor="w", padx=25, pady=15)
 
     def show_my_team_tab(self):
         tab_frame = ctk.CTkScrollableFrame(self.content_frame, fg_color="transparent")
