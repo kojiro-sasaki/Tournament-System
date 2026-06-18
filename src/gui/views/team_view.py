@@ -477,18 +477,31 @@ class TeamWindow(ctk.CTkFrame):
                     signed_lbl = ctk.CTkLabel(card, text="Registered ✔", font=("Roboto", 11, "bold"), text_color=COLOR_SUCCESS)
                     signed_lbl.pack(side="right", padx=15, pady=(0, 10))
                 else:
-                    sign_btn = ctk.CTkButton(
-                        card, 
-                        text="Sign Up", 
-                        font=("Roboto", 10, "bold"), 
-                        height=22, 
-                        width=65, 
-                        fg_color=COLOR_PRIMARY, 
-                        hover_color="#2E6299", 
-                        corner_radius=6,
-                        command=lambda tid=t["id"]: self.signup_for_tournament(tid)
-                    )
-                    sign_btn.pack(side="right", padx=15, pady=(0, 10))
+                    try:
+                        regs_resp = TournamentRegistrationRepository.get_all()
+                        regs = [r for r in (regs_resp.data or []) if r.get("tournament_id") == t["id"]]
+                        current_registered = len(regs)
+                        max_teams = t.get("max_teams", 8)
+                        is_full = current_registered >= max_teams
+                    except Exception:
+                        is_full = False
+
+                    if is_full:
+                        full_lbl = ctk.CTkLabel(card, text="Full ❌", font=("Roboto", 11, "bold"), text_color=COLOR_DANGER)
+                        full_lbl.pack(side="right", padx=15, pady=(0, 10))
+                    else:
+                        sign_btn = ctk.CTkButton(
+                            card,
+                            text="Sign Up",
+                            font=("Roboto", 10, "bold"),
+                            height=22,
+                            width=65,
+                            fg_color=COLOR_PRIMARY,
+                            hover_color="#2E6299",
+                            corner_radius=6,
+                            command=lambda tid=t["id"]: self.signup_for_tournament(tid)
+                        )
+                        sign_btn.pack(side="right", padx=15, pady=(0, 10))
 
     def select_tournament(self, tournament_id):
         self.selected_tournament_id = tournament_id
@@ -762,7 +775,7 @@ class TeamWindow(ctk.CTkFrame):
         t_matches = self._get_expanded_bracket_matches_for_bracket(self.selected_tournament_id)
 
         if not t_matches or len(t_matches) < 4:
-            self.bracket_canvas.create_text(300, 80, text="No bracket matches exist for this tournament yet.",
+            self.bracket_canvas.create_text(300, 80, text="Waiting for all teams to register...",
                                             fill=TEXT_MUTED, font=("Roboto", 13))
             self.bracket_canvas.configure(scrollregion=(0, 0, 600, 160))
             return
@@ -911,6 +924,8 @@ class TeamWindow(ctk.CTkFrame):
             [m for m in self.matches if m["tournament_id"] == tournament_id],
             key=lambda x: x.get("id", 0)
         )
+        if not existing_matches:
+            return []
 
         tournament = next((t for t in self.tournaments if t["id"] == tournament_id), None)
         if not tournament:

@@ -292,13 +292,34 @@ class AdminWindow(ctk.CTkFrame):
             c = row_frame(self.tournaments_scroll)
             c.pack(fill="x", pady=6, padx=5)
 
+            top_row = ctk.CTkFrame(c, fg_color="transparent")
+            top_row.pack(fill="x", padx=15, pady=(10, 0))
+
+            label(top_row, t["name"], size=14, bold=True, anchor="w").pack(side="left", fill="x", expand=True)
+
+            try:
+                regs_resp = TournamentRegistrationRepository.get_all()
+                regs = [r for r in (regs_resp.data or []) if r.get("tournament_id") == t["id"]]
+                registered_count = len(regs)
+            except Exception:
+                registered_count = 0
+
+            max_teams = t.get("max_teams", 8)
+
+            teams_label = f"{registered_count}/{max_teams}"
+            if registered_count == 0:
+                color = TEXT_MUTED
+            elif registered_count >= max_teams:
+                color = COLOR_DANGER
+            else:
+                color = COLOR_SUCCESS
+            label(top_row, teams_label, size=13, bold=True, color=color, anchor="e").pack(side="right")
+
             details = ctk.CTkFrame(c, fg_color="transparent")
-            details.pack(fill="x", padx=15, pady=10)
-
-            label(details, t["name"], size=14, bold=True, anchor="w").pack(fill="x")
+            details.pack(fill="x", padx=15, pady=(2, 5))
             game_name = "Counter-Strike 2" if t["game_id"] == 1 else "Dota 2"
-
-            label(details, f"{game_name} • Max Teams: {t['max_teams']} • Date: {t['start_date']}",
+            label(details,
+                  f"{game_name} • Max Teams: {max_teams} • Date: {t['start_date']}",
                   size=11, color=TEXT_MUTED, anchor="w").pack(fill="x")
 
             status_frame = ctk.CTkFrame(c, fg_color="transparent")
@@ -308,16 +329,37 @@ class AdminWindow(ctk.CTkFrame):
             actions = ctk.CTkFrame(c, fg_color="transparent")
             actions.pack(fill="x", padx=15, pady=(0, 10))
 
-            next_status = {
-                "Draft": ("Open Registration", "#34495E", "#2C3E50", "Registration Open"),
-                "Registration Open": ("Start Tournament", COLOR_SUCCESS, "#236127", "In Progress"),
-                "In Progress": ("Finish Tournament", COLOR_DANGER, "#A81D1D", "Finished"),
-            }.get(t["status"])
+            if t["status"] == "Draft":
+                btn = ctk.CTkButton(
+                    actions, text="Open Registration",
+                    font=F(11), height=25, width=110, corner_radius=6,
+                    fg_color="#34495E", hover_color="#2C3E50",
+                    command=lambda tid=t["id"]: self.change_tournament_status(tid, "Registration Open")
+                )
+                btn.pack(side="left", padx=(0, 5))
 
-            if next_status:
-                text, color, hover, new_status = next_status
-                button(actions, text, lambda tid=t["id"], s=new_status: self.change_tournament_status(tid, s),
-                       color=color, hover=hover, height=25, width=110, corner_radius=6).pack(side="left", padx=(0, 5))
+            elif t["status"] == "Registration Open":
+                is_full = registered_count >= max_teams
+
+                btn = ctk.CTkButton(
+                    actions, text="Start Tournament",
+                    font=F(11), height=25, width=110, corner_radius=6,
+                    fg_color=COLOR_SUCCESS if is_full else "#555566",
+                    hover_color="#236127" if is_full else "#555566",
+                    command=lambda tid=t["id"]: self.change_tournament_status(tid, "In Progress")
+                )
+                if not is_full:
+                    btn.configure(state="disabled")
+                btn.pack(side="left", padx=(0, 5))
+
+            elif t["status"] == "In Progress":
+                btn = ctk.CTkButton(
+                    actions, text="Finish Tournament",
+                    font=F(11), height=25, width=110, corner_radius=6,
+                    fg_color=COLOR_DANGER, hover_color="#A81D1D",
+                    command=lambda tid=t["id"]: self.change_tournament_status(tid, "Finished")
+                )
+                btn.pack(side="left", padx=(0, 5))
 
             outline_button(actions, "Delete", lambda tid=t["id"]: self.delete_tournament(tid)).pack(side="right")
 
@@ -698,6 +740,8 @@ class AdminWindow(ctk.CTkFrame):
             [m for m in self.matches if m["tournament_id"] == tournament_id],
             key=lambda x: x.get("id", 0)
         )
+        if not existing_matches:
+            return []
 
         tournament = next((t for t in self.tournaments if t["id"] == tournament_id), None)
         if not tournament:
@@ -975,7 +1019,7 @@ class AdminWindow(ctk.CTkFrame):
         if not t_matches:
             self.bracket_canvas.create_text(
                 300, 80,
-                text="No bracket matches exist for this tournament yet.",
+                text="Waiting for all teams to register...",
                 fill=TEXT_MUTED, font=("Roboto", 13)
             )
             self.bracket_canvas.configure(scrollregion=(0, 0, 600, 160))
