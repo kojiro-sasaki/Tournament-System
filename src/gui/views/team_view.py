@@ -452,30 +452,34 @@ class TeamWindow(ctk.CTkFrame):
             card = ctk.CTkFrame(self.t_scroll, fg_color="#181820", corner_radius=8, border_width=1, border_color="#2A2A35")
             card.pack(fill="x", pady=5, padx=5)
 
-            details = ctk.CTkFrame(card, fg_color="transparent")
-            details.pack(fill="x", padx=15, pady=(10, 5))
+            click_area = ctk.CTkFrame(card, fg_color="transparent")
+            click_area.pack(fill="x", padx=15, pady=(10, 5))
 
-            # Bind clicking on card to view match schedule
-            card.bind("<Button-1>", lambda event, tid=t["id"]: self.select_tournament(tid))
-            details.bind("<Button-1>", lambda event, tid=t["id"]: self.select_tournament(tid))
+            click_area.bind("<Button-1>", lambda event, tid=t["id"]: self.select_tournament(tid))
 
-            name = ctk.CTkLabel(details, text=t["name"], font=("Roboto", 13, "bold"), text_color=TEXT_PRIMARY, anchor="w")
+            name = ctk.CTkLabel(click_area, text=t["name"], font=("Roboto", 13, "bold"), text_color=TEXT_PRIMARY, anchor="w")
             name.pack(fill="x")
-
+            name.bind("<Button-1>", lambda event, tid=t["id"]: self.select_tournament(tid))
 
             game_name = "Counter-Strike 2" if t["game_id"] == 1 else "Dota 2"
-            game = ctk.CTkLabel(details,text=f"{game_name} • Date: {t['start_date']}",font=("Roboto", 11),text_color=TEXT_MUTED,anchor="w")
+            game = ctk.CTkLabel(click_area, text=f"{game_name} • Date: {t['start_date']}", font=("Roboto", 11), text_color=TEXT_MUTED, anchor="w")
             game.pack(fill="x")
+            game.bind("<Button-1>", lambda event, tid=t["id"]: self.select_tournament(tid))
 
-            status_color = COLOR_WARNING if t["status"] == "Draft" else (COLOR_PRIMARY if t["status"] == "Registration Open" else (COLOR_SUCCESS if t["status"] == "In Progress" else COLOR_DANGER))
-            badge = ctk.CTkLabel(card, text=f"  {t['status'].upper()}  ", font=("Roboto", 9, "bold"), text_color=TEXT_PRIMARY, fg_color=status_color, corner_radius=6, height=18)
-            badge.pack(side="left", padx=15, pady=(0, 10))
+            bottom_row = ctk.CTkFrame(card, fg_color="transparent")
+            bottom_row.pack(fill="x", padx=15, pady=(0, 10))
+
+            status_color = COLOR_WARNING if t["status"] == "Draft" else (
+                COLOR_PRIMARY if t["status"] == "Registration Open" else (
+                    COLOR_SUCCESS if t["status"] == "In Progress" else COLOR_DANGER))
+            badge = ctk.CTkLabel(bottom_row, text=f"  {t['status'].upper()}  ", font=("Roboto", 9, "bold"), text_color=TEXT_PRIMARY, fg_color=status_color, corner_radius=6, height=18)
+            badge.pack(side="left")
 
             # Sign Up Button
             if t["status"] == "Registration Open":
                 if t["id"] in self.registered_tournaments:
-                    signed_lbl = ctk.CTkLabel(card, text="Registered ✔", font=("Roboto", 11, "bold"), text_color=COLOR_SUCCESS)
-                    signed_lbl.pack(side="right", padx=15, pady=(0, 10))
+                    signed_lbl = ctk.CTkLabel(bottom_row, text="Registered ✔", font=("Roboto", 11, "bold"), text_color=COLOR_SUCCESS)
+                    signed_lbl.pack(side="right", padx=5)
                 else:
                     try:
                         regs_resp = TournamentRegistrationRepository.get_all()
@@ -487,11 +491,11 @@ class TeamWindow(ctk.CTkFrame):
                         is_full = False
 
                     if is_full:
-                        full_lbl = ctk.CTkLabel(card, text="Full ❌", font=("Roboto", 11, "bold"), text_color=COLOR_DANGER)
-                        full_lbl.pack(side="right", padx=15, pady=(0, 10))
+                        full_lbl = ctk.CTkLabel(bottom_row, text="Full ❌", font=("Roboto", 11, "bold"), text_color=COLOR_DANGER)
+                        full_lbl.pack(side="right", padx=5)
                     else:
                         sign_btn = ctk.CTkButton(
-                            card,
+                            bottom_row,
                             text="Sign Up",
                             font=("Roboto", 10, "bold"),
                             height=22,
@@ -501,11 +505,12 @@ class TeamWindow(ctk.CTkFrame):
                             corner_radius=6,
                             command=lambda tid=t["id"]: self.signup_for_tournament(tid)
                         )
-                        sign_btn.pack(side="right", padx=15, pady=(0, 10))
+                        sign_btn.pack(side="right", padx=0)
 
     def select_tournament(self, tournament_id):
         self.selected_tournament_id = tournament_id
         self._ensure_bracket_generated(tournament_id)
+        self._load_matches()
         self.refresh_matches_list()
 
     def _load_matches(self):
@@ -614,6 +619,8 @@ class TeamWindow(ctk.CTkFrame):
             print(f"REGISTRATION ERROR: {e}")
 
     def refresh_matches_list(self):
+        self._load_matches()
+
         for widget in self.m_scroll.winfo_children():
             widget.destroy()
 
@@ -631,7 +638,6 @@ class TeamWindow(ctk.CTkFrame):
             info = ctk.CTkFrame(row, fg_color="transparent")
             info.pack(side="left", padx=10, pady=8)
             ctk.CTkLabel(info, text=m["round"], font=("Roboto", 11, "bold"), text_color=COLOR_PRIMARY, anchor="w").pack(fill="x")
-            ctk.CTkLabel(info, text=m["time"], font=("Roboto", 10), text_color=TEXT_MUTED, anchor="w").pack(fill="x")
 
             teams = ctk.CTkFrame(row, fg_color="transparent")
             teams.pack(side="left", expand=True, fill="both")

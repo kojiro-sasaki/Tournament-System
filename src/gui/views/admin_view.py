@@ -537,7 +537,6 @@ class AdminWindow(ctk.CTkFrame):
             info_frame = ctk.CTkFrame(row, fg_color="transparent")
             info_frame.pack(side="left", padx=15, pady=12)
             label(info_frame, m["round"], size=12, bold=True, color=COLOR_PRIMARY, anchor="w").pack(fill="x")
-            label(info_frame, f"Time: {m['time']}", size=11, color=TEXT_MUTED, anchor="w").pack(fill="x")
 
             teams_frame = ctk.CTkFrame(row, fg_color="transparent")
             teams_frame.pack(side="left", expand=True, fill="both", padx=10)
@@ -667,7 +666,7 @@ class AdminWindow(ctk.CTkFrame):
     def update_bracket_flow(self, match):
         t_id = match["tournament_id"]
         t_matches = None
-        if hasattr(self, "current_bracket_matches") and match in self.current_bracket_matches:
+        if hasattr(self, "current_bracket_matches") and self.current_bracket_matches is not None and match in self.current_bracket_matches:
             t_matches = self.current_bracket_matches
         else:
             t_matches = sorted(
