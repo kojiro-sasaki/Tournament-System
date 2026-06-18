@@ -638,7 +638,12 @@ class TeamWindow(ctk.CTkFrame):
 
             info = ctk.CTkFrame(row, fg_color="transparent")
             info.pack(side="left", padx=10, pady=8)
+
             ctk.CTkLabel(info, text=m["round"], font=("Roboto", 11, "bold"), text_color=COLOR_PRIMARY, anchor="w").pack(fill="x")
+
+            status_color = COLOR_SUCCESS if m["status"] == "Finished" else (
+                COLOR_PRIMARY if m["status"] == "In Progress" else TEXT_MUTED)
+            ctk.CTkLabel(info, text=m["status"].upper(), font=("Roboto", 9, "bold"), text_color=status_color, anchor="w").pack(fill="x")
 
             teams = ctk.CTkFrame(row, fg_color="transparent")
             teams.pack(side="left", expand=True, fill="both")
@@ -648,15 +653,12 @@ class TeamWindow(ctk.CTkFrame):
             teams.grid_rowconfigure(0, weight=1)
 
             ctk.CTkLabel(teams, text=m["team1"], font=("Roboto", 11, "bold"), text_color=TEXT_PRIMARY, anchor="e").grid(row=0, column=0, sticky="ew", padx=5)
-            
+
             score_text = f" {m['score1']} - {m['score2']} " if m["status"] in ["Finished", "In Progress"] else " VS "
             ctk.CTkLabel(teams, text=score_text, font=("Roboto", 12, "bold"), text_color=COLOR_PRIMARY).grid(row=0, column=1)
-            
+
             ctk.CTkLabel(teams, text=m["team2"], font=("Roboto", 11, "bold"), text_color=TEXT_PRIMARY, anchor="w").grid(row=0, column=2, sticky="ew", padx=5)
 
-            status_color = COLOR_SUCCESS if m["status"] == "Finished" else (COLOR_PRIMARY if m["status"] == "In Progress" else TEXT_MUTED)
-            status_badge = ctk.CTkLabel(row, text=m["status"].upper(), font=("Roboto", 9, "bold"), text_color=status_color)
-            status_badge.pack(side="right", padx=10)
 
     def show_bracket_tab(self):
         tab_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
